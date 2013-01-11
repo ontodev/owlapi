@@ -310,20 +310,27 @@
   (first (annotations ontology curie property-curie)))
 
 (defn annotation-axioms
-  "Get a list of annotation axioms for a CURIE."
-  [ontology curie]
-  (iterator-seq
-    (.iterator (.getAnnotationAssertionAxioms ontology (expand curie)))))
+  "Get a list of all annotation axioms for a CURIE, or restrict to a given
+   property."
+  ([ontology curie]
+    (iterator-seq
+      (.iterator (.getAnnotationAssertionAxioms ontology (expand curie)))))
+  ([ontology curie property-curie]
+   (let [property-iri (expand property-curie)
+         axioms       (annotation-axioms ontology curie)]
+     (filter #(= property-iri (.getIRI (.getProperty %))) axioms))))
 
 (defn annotate!
   "Add an annotation to a CURIE with a given property and value."
-  [ontology curie property-curie value]
+  [ontology curie property-curie content]
   (let [iri      (expand curie)
         property (.getOWLAnnotationProperty data-factory
                                             (expand property-curie))
-        literal  (.getOWLLiteral data-factory value)
+        value    (if (string? content)
+                   (.getOWLLiteral data-factory content)
+                   content)
         axiom    (.getOWLAnnotationAssertionAxiom data-factory
-                                                  property iri literal)]
+                                                  property iri value)]
     (.addAxiom manager ontology axiom)))
 
 (defn copy-annotations!
@@ -331,6 +338,15 @@
   [from-ontology curie to-ontology]
   (.addAxioms manager to-ontology
               (.getAnnotationAssertionAxioms (class curie) from-ontology)))
+
+(defn remove-annotations!
+  "Remove all annotations for a CURIE, or all annotations with some property."
+  ([ontology curie]
+    (doseq [axiom (annotation-axioms ontology curie)]
+      (.removeAxiom manager ontology axiom)))
+  ([ontology curie property-curie]
+    (doseq [axiom (annotation-axioms ontology curie property-curie)]
+      (.removeAxiom manager ontology axiom))))
 
 
 ;; ## Labels

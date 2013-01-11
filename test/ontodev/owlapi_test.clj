@@ -6,6 +6,7 @@
 (def ontology-path "resources/ncbi_human.owl")
 (def human "http://purl.obolibrary.org/obo/NCBITaxon_9606")
 (def hasExactSynonym "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym")
+(def testProperty "http://foo.bar/testProperty")
 
 (let [ontology (owl/load-ontology ontology-path)]
   (try
@@ -52,5 +53,23 @@
     (fact (owl/annotations ontology human hasExactSynonym) =>
           (contains ["Homo sapiens" "human" "man"] :in-any-order))
 
+    ; Work with literal annotation
+    (fact (owl/annotations ontology human testProperty) => [])
+    (fact (count (owl/annotation-axioms ontology human)) => 9)
+    (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
+    (owl/annotate! ontology human testProperty "FOO")
+    (fact (owl/annotations ontology human testProperty) => ["FOO"])
+    (fact (count (owl/annotation-axioms ontology human)) => 10)
+    (fact (count (owl/annotation-axioms ontology human testProperty)) => 1)
+    (owl/remove-annotations! ontology human testProperty)
+    (fact (owl/annotations ontology human testProperty) => [])
+    (fact (count (owl/annotation-axioms ontology human)) => 9)
+    (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
+    
+    ; Work with resource annotation
+    (owl/annotate! ontology human testProperty (owl/expand "http://foo"))
+    (fact (owl/annotations ontology human testProperty) => ["http://foo"])
+
+    #_(owl/save-ontology ontology "test.owl")
     (finally (owl/remove-ontology ontology))))
 
