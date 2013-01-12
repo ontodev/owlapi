@@ -70,6 +70,16 @@
     (owl/annotate! ontology human testProperty (owl/expand "http://foo"))
     (fact (owl/annotations ontology human testProperty) => ["http://foo"])
 
+    ; Test ancestry
+    (fact "human is a primate"
+      (some #(= "ncbi:9443" %) (owl/ancestry ontology "ncbi:9606")) => true)
+    (fact "ancestry of 33213"
+      (owl/ancestry ontology "ncbi:33213") =>
+      ["ncbi:33213" "ncbi:6072" "ncbi:33208" "ncbi:33154" "ncbi:2759" "<http://purl.obolibrary.org/obo/OBI_0100026>"])
+    (fact "ancestry of 9606"
+      (owl/ancestry ontology "ncbi:9606") =>
+      ["ncbi:9606" "ncbi:9605" "ncbi:207598" "ncbi:9604" "ncbi:314295" "ncbi:9526" "ncbi:314293" "ncbi:376913" "ncbi:9443" "ncbi:314146" "ncbi:9347" "ncbi:32525" "ncbi:40674" "ncbi:32524" "ncbi:32523" "ncbi:8287" "ncbi:117571" "ncbi:117570" "ncbi:7776" "ncbi:7742" "ncbi:89593" "ncbi:7711" "ncbi:33511" "ncbi:33316" "ncbi:33213" "ncbi:6072" "ncbi:33208" "ncbi:33154" "ncbi:2759" "<http://purl.obolibrary.org/obo/OBI_0100026>"])
+
     #_(owl/save-ontology ontology "test.owl")
     (finally (owl/remove-ontology ontology))))
 

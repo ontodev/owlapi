@@ -253,16 +253,15 @@
                                      (class parent-curie))))
 
 (defn ancestry
-  "Return an ordered list of CURIE strings, starting with this class, of all
-   the ancestors. Uses the `parent` function by default. NOTE:If there are
+  "Return a lazy sequence of CURIE strings for all ancestors, starting with
+   this CURIE. Uses the `parent` function by default. NOTE: If there are
    multiple parents, only one is chosen!"
-  ([ontology start-curie] (ancestry ontology start-curie parent))
-  ([ontology start-curie func] 
-    (loop [curie  start-curie
-           curies []]
-      (if-not curie curies
-              (recur (func ontology curie)
-                     (conj curies curie))))))
+  ([ontology curie] (ancestry ontology curie parent))
+  ([ontology curie func] 
+   (let [parent (func ontology curie)]
+     (if parent
+       (cons curie (lazy-seq (ancestry ontology parent)))
+       [curie]))))
 
 (defn ancestors
   "Return an ordered list of CURIE strings of ancestors, not including this

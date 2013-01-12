@@ -3028,7 +3028,7 @@ net.brehaut.ClojureTools = (function (SH) {
     build_tree: build_tree
   };
 })(SyntaxHighlighter);
-</script><title>ontodev/owlapi -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">ontodev/owlapi</h1><h2 class="project-version">0.1.1</h2><br /><p>A thin Clojure wrapper around OWLAPI.</p>
+</script><title>ontodev/owlapi -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">ontodev/owlapi</h1><h2 class="project-version">0.2.0-SNAPSHOT</h2><br /><p>A thin Clojure wrapper around OWLAPI.</p>
 </div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr><tr><td class="dep-name">org.clojure/tools.logging</td><td class="dotted"><hr /></td><td class="dep-version">0.2.4</td></tr><tr><td class="dep-name">owlapi/owlapi</td><td class="dotted"><hr /></td><td class="dep-version">3.2.4</td></tr><tr><td class="dep-name">org.semanticweb/HermiT</td><td class="dotted"><hr /></td><td class="dep-version">1.3.6</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#ontodev.owlapi">ontodev.owlapi</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#ontodev.owlapi" name="ontodev.owlapi"><h1 class="project-name">ontodev.owlapi</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h1>OWLAPI Wrapper</h1>
 
 <p>This code provides a thin wrapper over the OWLAPI:
@@ -3224,17 +3224,16 @@ convert back and forth between strings, IRIs, and objects.</p>
   (.addAxiom manager ontology
              (.getOWLSubClassOfAxiom data-factory
                                      (class child-curie)
-                                     (class parent-curie))))</pre></td></tr><tr><td class="docs"><p>Return an ordered list of CURIE strings, starting with this class, of all
-   the ancestors. Uses the <code>parent</code> function by default. NOTE:If there are
+                                     (class parent-curie))))</pre></td></tr><tr><td class="docs"><p>Return a lazy sequence of CURIE strings for all ancestors, starting with
+   this CURIE. Uses the <code>parent</code> function by default. NOTE: If there are
    multiple parents, only one is chosen!</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ancestry
-  ([ontology start-curie] (ancestry ontology start-curie parent))
-  ([ontology start-curie func] 
-    (loop [curie  start-curie
-           curies []]
-      (if-not curie curies
-              (recur (func ontology curie)
-                     (conj curies curie))))))</pre></td></tr><tr><td class="docs"><p>Return an ordered list of CURIE strings of ancestors, not including this
+  ([ontology curie] (ancestry ontology curie parent))
+  ([ontology curie func] 
+   (let [parent (func ontology curie)]
+     (if parent
+       (cons curie (lazy-seq (ancestry ontology parent)))
+       [curie]))))</pre></td></tr><tr><td class="docs"><p>Return an ordered list of CURIE strings of ancestors, not including this
    class. Uses <code>ancestry</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ancestors
   ([ontology curie] (ancestors ontology curie parent)) 
