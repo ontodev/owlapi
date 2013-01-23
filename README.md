@@ -29,6 +29,6 @@ See the documentation in `docs/uberdoc.html` for more information.
 
 ## License
 
-Copyright © 2012, James A. Overton
+Copyright © 2013, James A. Overton
 
 Distributed under the Simplified BSD License: [http://opensource.org/licenses/BSD-2-Clause]()

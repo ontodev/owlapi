@@ -99,7 +99,8 @@
               .toString
               (string/replace #"^<|>$" "")) ; have to strip angle brackets
         (instance? OWLNamedObject curie)
-          (.toString (.getShortForm prefixes curie)) 
+          (string/replace (.toString (.getShortForm prefixes curie))
+                          #"^<|>$" "") 
         :else (throw (Exception. (str "Cannot shorten " curie)))))
 
 (defn in-namespace?

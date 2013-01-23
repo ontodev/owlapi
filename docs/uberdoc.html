@@ -3115,7 +3115,8 @@ convert back and forth between strings, IRIs, and objects.</p>
               .toString
               (string/replace #&quot;^&lt;|&gt;$&quot; &quot;&quot;)) ; have to strip angle brackets
         (instance? OWLNamedObject curie)
-          (.toString (.getShortForm prefixes curie)) 
+          (string/replace (.toString (.getShortForm prefixes curie))
+                          #&quot;^&lt;|&gt;$&quot; &quot;&quot;) 
         :else (throw (Exception. (str &quot;Cannot shorten &quot; curie)))))</pre></td></tr><tr><td class="docs"><p>Check whether a CURIE string is inside a namespace.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn in-namespace?
   [namespace curie]
