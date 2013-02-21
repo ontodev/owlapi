@@ -33,7 +33,8 @@
                                  InferredEquivalentClassAxiomGenerator
                                  InferredDisjointClassesAxiomGenerator 
                                  InferredClassAssertionAxiomGenerator
-                                 InferredOntologyGenerator)
+                                 InferredOntologyGenerator
+                                 OWLOntologyMerger)
     (org.semanticweb.HermiT Reasoner Reasoner$ReasonerFactory)))
 
 
@@ -67,6 +68,28 @@
   [ontology]
   (log/info "Removing ontology:" ontology)
   (.removeOntology manager ontology))
+
+(defn merge-ontologies
+  "Load one or more ontologies from files, merge with a new IRI, and save to
+   a new file. Uses a new manager and data-factory, and removes all loaded
+   ontologies."
+  [iri save-path & merge-paths]
+  (let [data-factory (OWLManager/getOWLDataFactory)
+        manager      (OWLManager/createOWLOntologyManager data-factory)
+        load-fn      (fn [path]
+                         (log/info "Loading ontology for merge:" path)
+                         (.loadOntologyFromOntologyDocument
+                           manager (io/file path)))
+        loaded       (doall (map load-fn merge-paths))]
+    (log/info "Creating ontology:" iri)
+    (let [merger (OWLOntologyMerger. manager)
+          merged (.createMergedOntology merger manager (IRI/create iri))]
+      (log/info "Saving ontology:" save-path)
+      (.saveOntology manager merged
+                     (IRI/create (io/as-url (io/file save-path))))
+      (doseq [ontology loaded] (.removeOntology manager ontology))
+      (.removeOntology manager merged)
+      nil)))
 
 
 ;; ## IRIs

@@ -3065,7 +3065,8 @@ reasoner for Protégé.</p>
                                  InferredEquivalentClassAxiomGenerator
                                  InferredDisjointClassesAxiomGenerator 
                                  InferredClassAssertionAxiomGenerator
-                                 InferredOntologyGenerator)
+                                 InferredOntologyGenerator
+                                 OWLOntologyMerger)
     (org.semanticweb.HermiT Reasoner Reasoner$ReasonerFactory)))</pre></td></tr><tr><td class="docs"><h2>Globals</h2>
 
 <p>In the current implementation all ontologies share a common OWLDataFactory
@@ -3091,7 +3092,27 @@ and OWLOntologyManager.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn remove-ontology
   [ontology]
   (log/info &quot;Removing ontology:&quot; ontology)
-  (.removeOntology manager ontology))</pre></td></tr><tr><td class="docs"><h2>IRIs</h2>
+  (.removeOntology manager ontology))</pre></td></tr><tr><td class="docs"><p>Load one or more ontologies from files, merge with a new IRI, and save to
+   a new file. Uses a new manager and data-factory, and removes all loaded
+   ontologies.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn merge-ontologies
+  [iri save-path &amp; merge-paths]
+  (let [data-factory (OWLManager/getOWLDataFactory)
+        manager      (OWLManager/createOWLOntologyManager data-factory)
+        load-fn      (fn [path]
+                         (log/info &quot;Loading ontology for merge:&quot; path)
+                         (.loadOntologyFromOntologyDocument
+                           manager (io/file path)))
+        loaded       (doall (map load-fn merge-paths))]
+    (log/info &quot;Creating ontology:&quot; iri)
+    (let [merger (OWLOntologyMerger. manager)
+          merged (.createMergedOntology merger manager (IRI/create iri))]
+      (log/info &quot;Saving ontology:&quot; save-path)
+      (.saveOntology manager merged
+                     (IRI/create (io/as-url (io/file save-path))))
+      (doseq [ontology loaded] (.removeOntology manager ontology))
+      (.removeOntology manager merged)
+      nil)))</pre></td></tr><tr><td class="docs"><h2>IRIs</h2>
 
 <p>It's more convenient to work with CURIE strings, but that means we have to
 convert back and forth between strings, IRIs, and objects.</p>

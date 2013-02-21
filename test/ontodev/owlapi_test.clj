@@ -1,15 +1,18 @@
 (ns ontodev.owlapi-test
   (:use midje.sweet)
-  (:require [ontodev.owlapi :as owl])
+  (:require [clojure.java.io :as io]
+            [ontodev.owlapi :as owl])
   (:import (org.semanticweb.owlapi.model OWLOntologyManager OWLOntology IRI)))
 
-(def ontology-path "resources/ncbi_human.owl")
+(def human-path "resources/ncbi_human.owl")
+(def mouse-path "resources/ncbi_mouse.owl")
 (def human "http://purl.obolibrary.org/obo/NCBITaxon_9606")
+(def mouse "http://purl.obolibrary.org/obo/NCBITaxon_10090")
 (def organism "http://purl.obolibrary.org/obo/OBI_0100026")
 (def hasExactSynonym "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym")
 (def testProperty "http://foo.bar/testProperty")
 
-(let [ontology (owl/load-ontology ontology-path)]
+(let [ontology (owl/load-ontology human-path)]
   (try
     (fact ontology => truthy)
     ;(fact (owl/annotations ontology human) => "")
@@ -58,15 +61,15 @@
 
     ; Work with literal annotation
     (fact (owl/annotations ontology human testProperty) => [])
-    (fact (count (owl/annotation-axioms ontology human)) => 9)
+    (fact (count (owl/annotation-axioms ontology human)) => 8)
     (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
     (owl/annotate! ontology human testProperty "FOO")
     (fact (owl/annotations ontology human testProperty) => ["FOO"])
-    (fact (count (owl/annotation-axioms ontology human)) => 10)
+    (fact (count (owl/annotation-axioms ontology human)) => 9)
     (fact (count (owl/annotation-axioms ontology human testProperty)) => 1)
     (owl/remove-annotations! ontology human testProperty)
     (fact (owl/annotations ontology human testProperty) => [])
-    (fact (count (owl/annotation-axioms ontology human)) => 9)
+    (fact (count (owl/annotation-axioms ontology human)) => 8)
     (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
     
     ; Work with resource annotation
@@ -81,8 +84,19 @@
       ["ncbi:33213" "ncbi:6072" "ncbi:33208" "ncbi:33154" "ncbi:2759" "http://purl.obolibrary.org/obo/OBI_0100026"])
     (fact "ancestry of 9606"
       (owl/ancestry ontology "ncbi:9606") =>
-      ["ncbi:9606" "ncbi:9605" "ncbi:207598" "ncbi:9604" "ncbi:314295" "ncbi:9526" "ncbi:314293" "ncbi:376913" "ncbi:9443" "ncbi:314146" "ncbi:9347" "ncbi:32525" "ncbi:40674" "ncbi:32524" "ncbi:32523" "ncbi:8287" "ncbi:117571" "ncbi:117570" "ncbi:7776" "ncbi:7742" "ncbi:89593" "ncbi:7711" "ncbi:33511" "ncbi:33316" "ncbi:33213" "ncbi:6072" "ncbi:33208" "ncbi:33154" "ncbi:2759" "http://purl.obolibrary.org/obo/OBI_0100026"])
+      ["ncbi:9606" "ncbi:9605" "ncbi:207598" "ncbi:9604" "ncbi:314295" "ncbi:9526" "ncbi:314293" "ncbi:376913" "ncbi:9443" "ncbi:314146" "ncbi:9347" "ncbi:32525" "ncbi:40674" "ncbi:32524" "ncbi:32523" "ncbi:8287" "ncbi:117571" "ncbi:117570" "ncbi:7776" "ncbi:7742" "ncbi:89593" "ncbi:7711" "ncbi:33511" "ncbi:33213" "ncbi:6072" "ncbi:33208" "ncbi:33154" "ncbi:2759" "http://purl.obolibrary.org/obo/OBI_0100026"])
 
     #_(owl/save-ontology ontology "test.owl")
+
     (finally (owl/remove-ontology ontology))))
 
+(owl/merge-ontologies "http://merged.org" "merged.owl" human-path mouse-path)
+(let [ontology (owl/load-ontology "merged.owl")]
+  (try
+    (fact "human is a primate"
+      (some #(= "ncbi:9443" %) (owl/ancestry ontology "ncbi:9606")) => true)
+    (fact "mouse is a rodent"
+      (some #(= "ncbi:9989" %) (owl/ancestry ontology "ncbi:10090")) => true)
+
+    (finally (owl/remove-ontology ontology)
+             (io/delete-file "merged.owl"))))
