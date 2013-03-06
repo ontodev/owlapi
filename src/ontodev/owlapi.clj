@@ -284,7 +284,7 @@
   ([ontology curie func] 
    (let [parent (func ontology curie)]
      (if parent
-       (cons curie (lazy-seq (ancestry ontology parent)))
+       (cons curie (lazy-seq (ancestry ontology parent func)))
        [curie]))))
 
 (defn ancestors

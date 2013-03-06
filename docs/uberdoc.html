@@ -3254,7 +3254,7 @@ convert back and forth between strings, IRIs, and objects.</p>
   ([ontology curie func] 
    (let [parent (func ontology curie)]
      (if parent
-       (cons curie (lazy-seq (ancestry ontology parent)))
+       (cons curie (lazy-seq (ancestry ontology parent func)))
        [curie]))))</pre></td></tr><tr><td class="docs"><p>Return an ordered list of CURIE strings of ancestors, not including this
    class. Uses <code>ancestry</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ancestors
