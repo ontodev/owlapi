@@ -75,6 +75,24 @@
     ; Work with resource annotation
     (owl/annotate! ontology human testProperty (owl/expand "http://foo"))
     (fact (owl/annotations ontology human testProperty) => ["http://foo"])
+    (owl/remove-annotations! ontology human testProperty)
+
+    ; Annotated annotations
+    (fact (count (owl/annotations+ ontology human)) => 8)
+    (fact (count (owl/annotations+ ontology human testProperty)) => 0)
+    (owl/annotate+! ontology human
+                    testProperty (owl/expand "http://foo")
+                    "rdfs:comment" "FOO")
+    (fact (count (owl/annotations+ ontology human testProperty)) => 1)
+    (fact (owl/annotations+ ontology human testProperty) =>
+          [["http://foo" [["rdfs:comment" "FOO"]]]])
+    (fact (owl/annotations+ ontology human testProperty "http://foo") =>
+          [["rdfs:comment" "FOO"]])
+    (fact (owl/annotation+ ontology human testProperty) =>
+          ["http://foo" [["rdfs:comment" "FOO"]]])
+    (fact (owl/annotation+ ontology human testProperty "http://foo") =>
+          ["rdfs:comment" "FOO"])
+
 
     ; Test ancestry
     (fact "human is a primate"

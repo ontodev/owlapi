@@ -309,15 +309,25 @@
     (instance? IRI value) (.toString value)
     :else (str value)))
 
+(defn annotation-axioms
+  "Get a list of all annotation axioms for a CURIE,
+   or restrict to axioms with a given property."
+  ([ontology curie]
+    (iterator-seq
+      (.iterator (.getAnnotationAssertionAxioms ontology (expand curie)))))
+  ([ontology curie property-curie]
+   (let [property-iri (expand property-curie)
+         axioms       (annotation-axioms ontology curie)]
+     (filter #(= property-iri (.getIRI (.getProperty %))) axioms))))
+
 (defn annotations
-  "Get a list of properties and values for all the annotations for this CURIE,
+  "Get a list of properties and values for all the annotations on this CURIE,
    or restrict the list to just the values of some property."
   ([ontology curie]
     (let [class (class curie)
           annotations (iterator-seq
                         (.iterator (.getAnnotations class ontology)))]
-      (map #(vector (shorten (.getProperty %))
-                    (get-value (.getValue %)))
+      (map #(vector (shorten (.getProperty %)) (get-value (.getValue %)))
            annotations)))
   ([ontology curie property-curie] 
     (let [class    (class curie)
@@ -328,20 +338,43 @@
       (map #(get-value (.getValue %)) annotations))))
 
 (defn annotation
-  "Get the first annotation for a given property, if any."
+  "Get the first annotation on a CURIE for a given property, if any."
   [ontology curie property-curie]
   (first (annotations ontology curie property-curie)))
 
-(defn annotation-axioms
-  "Get a list of all annotation axioms for a CURIE, or restrict to a given
-   property."
+(defn axiom-annotations
+  "Given an axiom, get the property, value,
+   and a vector of annotation properties and values."
+  [axiom]
+  [(shorten (.getProperty axiom))
+   (get-value (.getValue axiom))
+   (vec (map #(vector (shorten (.getProperty %)) (get-value (.getValue %)))
+             (iterator-seq (.iterator (.getAnnotations axiom)))))])
+
+(defn annotations+
+  "Get a list of annotation properties and values for this CURIE
+   and all their annotation propeties and values,
+   or restrict the list to just the values and annotations for some property,
+   or restrict the list to just the annotations for some property and value."
   ([ontology curie]
-    (iterator-seq
-      (.iterator (.getAnnotationAssertionAxioms ontology (expand curie)))))
-  ([ontology curie property-curie]
-   (let [property-iri (expand property-curie)
-         axioms       (annotation-axioms ontology curie)]
-     (filter #(= property-iri (.getIRI (.getProperty %))) axioms))))
+    (let [axioms (annotation-axioms ontology curie)]
+      (map axiom-annotations axioms)))
+  ([ontology curie property-curie] 
+    (let [axioms (annotation-axioms ontology curie property-curie)]
+      (map rest (map axiom-annotations axioms)))) 
+  ([ontology curie property-curie value] 
+   (->> (annotations+ ontology curie property-curie)
+        (filter #(= (first %) value))    
+        first
+        last)))
+
+(defn annotation+
+  "Get the first annotated annotation on a CURIE for a given property, if any,
+   or restruct to the first annotation for a given property and value."
+  ([ontology curie property-curie] 
+    (first (annotations+ ontology curie property-curie)))
+  ([ontology curie property-curie value] 
+    (first (annotations+ ontology curie property-curie value)))) 
 
 (defn annotate!
   "Add an annotation to a CURIE with a given property and value."
@@ -354,6 +387,28 @@
                    content)
         axiom    (.getOWLAnnotationAssertionAxiom data-factory
                                                   property iri value)]
+    (.addAxiom manager ontology axiom)))
+
+(defn annotate+!
+  "Add an annotated annotation to a CURIE with a given property and value,
+   and annotation-property and annotation-value."
+  [ontology curie property-curie content
+   annotation-property-curie annotation-content]
+  (let [iri          (expand curie) 
+        property     (.getOWLAnnotationProperty data-factory
+                                                (expand property-curie))
+        value        (if (string? content)
+                       (.getOWLLiteral data-factory content)
+                       content)
+        ann-property (.getOWLAnnotationProperty data-factory
+                                            (expand annotation-property-curie))
+        ann-value    (if (string? annotation-content)
+                       (.getOWLLiteral data-factory annotation-content)
+                       annotation-content)
+        annotation   (.getOWLAnnotation data-factory ann-property ann-value)
+        axiom        (.getOWLAnnotationAssertionAxiom data-factory
+                                                      property iri value
+                                                      #{annotation})]
     (.addAxiom manager ontology axiom)))
 
 (defn copy-annotations!
