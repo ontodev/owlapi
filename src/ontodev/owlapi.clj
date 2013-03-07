@@ -24,14 +24,14 @@
                                   OWLClassExpression OWLClass OWLAnnotation
                                   OWLAxiom OWLAnnotationAssertionAxiom
                                   OWLNamedObject OWLLiteral OWLObjectProperty)
-    (org.semanticweb.owlapi.apibinding OWLManager) 
+    (org.semanticweb.owlapi.apibinding OWLManager)
     (org.semanticweb.owlapi.io RDFXMLOntologyFormat)
     (org.semanticweb.owlapi.util DefaultPrefixManager)
     (org.semanticweb.owlapi.reasoner InferenceType)
-    (org.semanticweb.owlapi.util InferredAxiomGenerator 
+    (org.semanticweb.owlapi.util InferredAxiomGenerator
                                  InferredSubClassAxiomGenerator
                                  InferredEquivalentClassAxiomGenerator
-                                 InferredDisjointClassesAxiomGenerator 
+                                 InferredDisjointClassesAxiomGenerator
                                  InferredClassAssertionAxiomGenerator
                                  InferredOntologyGenerator
                                  OWLOntologyMerger)
@@ -111,19 +111,19 @@
   (cond (and (string? curie) (.startsWith curie "http:")) (IRI/create curie)
         (string? curie) (.getIRI prefixes curie)
         (number? curie) (.getIRI prefixes (str curie))
-        (instance? OWLNamedObject curie) (.getIRI curie) 
+        (instance? OWLNamedObject curie) (.getIRI curie)
         :else (throw (Exception. (str "Cannot expand " curie)))))
 
 (defn shorten
   "Take an object and return a CURIE string."
   [curie]
   (cond (string? curie)
-          (-> (.getShortForm prefixes (IRI/create curie)) 
+          (-> (.getShortForm prefixes (IRI/create curie))
               .toString
               (string/replace #"^<|>$" "")) ; have to strip angle brackets
         (instance? OWLNamedObject curie)
           (string/replace (.toString (.getShortForm prefixes curie))
-                          #"^<|>$" "") 
+                          #"^<|>$" "")
         :else (throw (Exception. (str "Cannot shorten " curie)))))
 
 (defn in-namespace?
@@ -137,11 +137,11 @@
 ;; ## Object Properties
 
 (defn property
-  "Take a CURIE string and return an object property. If the argument is 
+  "Take a CURIE string and return an object property. If the argument is
    already an OWLObjectProperty then it is just returned."
   [curie]
   (cond
-    (string? curie) (.getOWLObjectProperty data-factory (expand curie)) 
+    (string? curie) (.getOWLObjectProperty data-factory (expand curie))
     (instance? OWLObjectProperty curie) curie
     :else (throw (Exception. (str "Unknown type in owlapi/property for "
                                   curie)))))
@@ -171,7 +171,7 @@
    OWLClass or OWLClassExpression, it is just returned."
   [curie]
   (cond
-    (string? curie) (.getOWLClass data-factory (expand curie)) 
+    (string? curie) (.getOWLClass data-factory (expand curie))
     (instance? OWLClassExpression curie) curie
     :else (throw (Exception. (str "Unknown type in owlapi/class for " curie)))))
 
@@ -209,7 +209,7 @@
                                (class class-curie)))
 
 (defn equivalent!
-  "Assert that two classes, or a class and a class expression, are 
+  "Assert that two classes, or a class and a class expression, are
    OWLEquivalentClasses."
   [ontology curie1 curie2]
   (.addAxiom manager ontology
@@ -243,7 +243,7 @@
   [reasoner curie]
   (map shorten
        (-> (class curie)
-           (#(.getSubClasses reasoner % false)) 
+           (#(.getSubClasses reasoner % false))
            .getFlattened
            .iterator
            iterator-seq)))
@@ -265,7 +265,7 @@
 (defn orphan!
   "Remove all superclasses from this class."
   [ontology curie]
-  (.removeAxioms manager ontology 
+  (.removeAxioms manager ontology
                  (.getSubClassAxiomsForSubClass ontology (class curie))))
 
 (defn parent!
@@ -281,7 +281,7 @@
    this CURIE. Uses the `parent` function by default. NOTE: If there are
    multiple parents, only one is chosen!"
   ([ontology curie] (ancestry ontology curie parent))
-  ([ontology curie func] 
+  ([ontology curie func]
    (let [parent (func ontology curie)]
      (if parent
        (cons curie (lazy-seq (ancestry ontology parent func)))
@@ -290,7 +290,7 @@
 (defn ancestors
   "Return an ordered list of CURIE strings of ancestors, not including this
    class. Uses `ancestry`."
-  ([ontology curie] (ancestors ontology curie parent)) 
+  ([ontology curie] (ancestors ontology curie parent))
   ([ontology curie func] (drop 1 (ancestry ontology curie func))))
 
 
@@ -329,7 +329,7 @@
                         (.iterator (.getAnnotations class ontology)))]
       (map #(vector (shorten (.getProperty %)) (get-value (.getValue %)))
            annotations)))
-  ([ontology curie property-curie] 
+  ([ontology curie property-curie]
     (let [class    (class curie)
           property (.getOWLAnnotationProperty data-factory
                                               (expand property-curie))
@@ -359,22 +359,22 @@
   ([ontology curie]
     (let [axioms (annotation-axioms ontology curie)]
       (map axiom-annotations axioms)))
-  ([ontology curie property-curie] 
+  ([ontology curie property-curie]
     (let [axioms (annotation-axioms ontology curie property-curie)]
-      (map rest (map axiom-annotations axioms)))) 
-  ([ontology curie property-curie value] 
+      (map rest (map axiom-annotations axioms))))
+  ([ontology curie property-curie value]
    (->> (annotations+ ontology curie property-curie)
-        (filter #(= (first %) value))    
+        (filter #(= (first %) value))
         first
         last)))
 
 (defn annotation+
   "Get the first annotated annotation on a CURIE for a given property, if any,
    or restruct to the first annotation for a given property and value."
-  ([ontology curie property-curie] 
+  ([ontology curie property-curie]
     (first (annotations+ ontology curie property-curie)))
-  ([ontology curie property-curie value] 
-    (first (annotations+ ontology curie property-curie value)))) 
+  ([ontology curie property-curie value]
+    (first (annotations+ ontology curie property-curie value))))
 
 (defn annotate!
   "Add an annotation to a CURIE with a given property and value."
@@ -394,7 +394,7 @@
    and annotation-property and annotation-value."
   [ontology curie property-curie content
    annotation-property-curie annotation-content]
-  (let [iri          (expand curie) 
+  (let [iri          (expand curie)
         property     (.getOWLAnnotationProperty data-factory
                                                 (expand property-curie))
         value        (if (string? content)
@@ -428,7 +428,7 @@
 
 
 ;; ## Labels
-;; rdfs:label annotations are a common case, so we provide convenience 
+;; rdfs:label annotations are a common case, so we provide convenience
 ;; functions.
 
 (defn labels
@@ -450,27 +450,59 @@
   "Remove all rdfs:labels from a CURIE."
   [ontology curie]
   (doseq [axiom (label-axioms ontology curie)]
-    (.removeAxiom manager ontology axiom))) 
+    (.removeAxiom manager ontology axiom)))
 
 (defn label!
-  "Add an rdfs:label for a CURIE."
-  [ontology curie value]
-  (annotate! ontology curie "rdfs:label" value))
+  "Add an rdfs:label for a CURIE, with an optional annotation."
+  ([ontology curie value]
+    (annotate! ontology curie "rdfs:label" value))
+  ([ontology curie value annotation-property annotation-value]
+    (annotate+! ontology curie "rdfs:label" value
+                annotation-property annotation-value)))
 
 (defn relabel!
-  "Relabel a CURIE. Either removes all other labels or assigns them to a
-   given property."
+  "Relabel a CURIE. Either removes all other labels,
+   or reassigns them to a given property,
+   or removes others and annotates the new label,
+   or annotations the new label and reassigns to a given property
+   with an annotation."
   ([ontology curie value]
    (remove-labels! ontology curie)
    (label! ontology curie value))
-  ([ontology curie property-curie value]
+
+  ([ontology curie value reassign-property]
    (let [labels (labels ontology curie)]
-     (doseq [label labels] (annotate! ontology curie property-curie label))
+     (doseq [label labels]
+            (annotate! ontology curie reassign-property label))
      (remove-labels! ontology curie)
-     (label! ontology curie value))))
+     (label! ontology curie value)))
+
+  ([ontology curie value annotation-property annotation-value]
+   (let [labels (labels ontology curie)]
+     (remove-labels! ontology curie)
+     (label! ontology curie value annotation-property annotation-value)))
+
+  ([ontology curie value
+    reassign-property reassign-annotation-property reassign-annotation-value]
+   (let [labels (labels ontology curie)]
+     (doseq [label labels]
+            (annotate+! ontology curie reassign-property label
+                        reassign-annotation-property reassign-annotation-value))
+     (remove-labels! ontology curie)
+     (label! ontology curie value)))
+
+  ([ontology curie value
+    annotation-property annotation-value
+    reassign-property reassign-annotation-property reassign-annotation-value]
+   (let [labels (labels ontology curie)]
+     (doseq [label labels]
+            (annotate+! ontology curie reassign-property label
+                        reassign-annotation-property reassign-annotation-value))
+     (remove-labels! ontology curie)
+     (label! ontology curie value annotation-property annotation-value))))
 
 
-;; ## Working with Classes 
+;; ## Working with Classes
 
 (defn axioms
   "Return a list of axioms for the given entity."
@@ -483,8 +515,8 @@
   ([ontology curie label] (add-class! ontology curie nil label))
   ([ontology curie parent-curie label]
     (log/debugf "Adding class '%s'" curie)
-    (let [axiom (declare-class! ontology curie)] 
-      (when parent-curie (parent! ontology curie parent-curie)) 
+    (let [axiom (declare-class! ontology curie)]
+      (when parent-curie (parent! ontology curie parent-curie))
       (when label (annotate! ontology curie "rdfs:label" label))
       axiom)))
 

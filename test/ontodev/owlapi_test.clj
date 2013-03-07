@@ -10,6 +10,8 @@
 (def mouse "http://purl.obolibrary.org/obo/NCBITaxon_10090")
 (def organism "http://purl.obolibrary.org/obo/OBI_0100026")
 (def hasExactSynonym "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym")
+(def hasSynonymType "http://www.geneontology.org/formats/oboInOwl#hasSynonymType")
+(def scientificName "http://purl.obolibrary.org/obo/ncbitaxon#scientific_name")
 (def testProperty "http://foo.bar/testProperty")
 
 (let [ontology (owl/load-ontology human-path)]
@@ -34,7 +36,42 @@
     (fact (owl/in-namespace? "ncbi:" "ncbi:9606") => true)
     (fact (owl/in-namespace? "ncb:" "ncbi:9606") => false)
     (fact (owl/in-namespace? "ncbi" "iedb:9606") => false)
-    
+
+    ; Work with literal annotations
+    (fact (owl/annotations ontology human testProperty) => [])
+    (fact (count (owl/annotation-axioms ontology human)) => 7)
+    (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
+    (owl/annotate! ontology human testProperty "FOO")
+    (fact (owl/annotations ontology human testProperty) => ["FOO"])
+    (fact (count (owl/annotation-axioms ontology human)) => 8)
+    (fact (count (owl/annotation-axioms ontology human testProperty)) => 1)
+    (owl/remove-annotations! ontology human testProperty)
+    (fact (owl/annotations ontology human testProperty) => [])
+    (fact (count (owl/annotation-axioms ontology human)) => 7)
+    (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
+
+    ; Work with resource annotations
+    (owl/annotate! ontology human testProperty (owl/expand "http://foo"))
+    (fact (owl/annotations ontology human testProperty) => ["http://foo"])
+    (owl/remove-annotations! ontology human testProperty)
+
+    ; Annotated annotations
+    (fact (count (owl/annotations+ ontology human)) => 7)
+    (fact (count (owl/annotations+ ontology human testProperty)) => 0)
+    (owl/annotate+! ontology human
+                    testProperty (owl/expand "http://foo")
+                    "rdfs:comment" "FOO")
+    (fact (count (owl/annotations+ ontology human testProperty)) => 1)
+    (fact (owl/annotations+ ontology human testProperty) =>
+          [["http://foo" [["rdfs:comment" "FOO"]]]])
+    (fact (owl/annotations+ ontology human testProperty "http://foo") =>
+          [["rdfs:comment" "FOO"]])
+    (fact (owl/annotation+ ontology human testProperty) =>
+          ["http://foo" [["rdfs:comment" "FOO"]]])
+    (fact (owl/annotation+ ontology human testProperty "http://foo") =>
+          ["rdfs:comment" "FOO"])
+    (owl/remove-annotations! ontology human testProperty)
+
     ; Check current labels and synonyms
     (fact (owl/label ontology human) => "Homo sapiens")
     (fact (owl/labels ontology human) => ["Homo sapiens"])
@@ -52,47 +89,56 @@
     (fact (owl/annotations ontology human hasExactSynonym) =>
           (contains ["human" "man"] :in-any-order))
 
-    ; Replace label, demoting existing labels to synonyms
-    (owl/relabel! ontology human hasExactSynonym "Human")
+    ; Replace the labels using annotation
+    (owl/relabel! ontology human "Homo sapiens"
+                  hasSynonymType (owl/expand scientificName))
+    (fact (owl/label ontology human) => "Homo sapiens")
+    (fact (owl/labels ontology human) => ["Homo sapiens"])
+    (fact (owl/annotations ontology human hasExactSynonym) =>
+          (contains ["human" "man"] :in-any-order))
+    (fact (owl/annotations+ ontology human "rdfs:label") =>
+          (contains [["Homo sapiens" [[hasSynonymType scientificName]]]]))
+    (fact (owl/annotations+ ontology human hasExactSynonym) =>
+          (contains [["man"   [["rdfs:comment" "UHGouhawiefuh"]]]
+                     ["human" [["rdfs:comment" "foo"]]]]
+                    :in-any-order))
+
+    ; Replace label, reassigning existing labels to synonyms
+    (owl/relabel! ontology human "Human" hasExactSynonym)
     (fact (owl/label ontology human) => "Human")
     (fact (owl/labels ontology human) => ["Human"])
     (fact (owl/annotations ontology human hasExactSynonym) =>
           (contains ["Homo sapiens" "human" "man"] :in-any-order))
 
-    ; Work with literal annotation
-    (fact (owl/annotations ontology human testProperty) => [])
-    (fact (count (owl/annotation-axioms ontology human)) => 8)
-    (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
-    (owl/annotate! ontology human testProperty "FOO")
-    (fact (owl/annotations ontology human testProperty) => ["FOO"])
-    (fact (count (owl/annotation-axioms ontology human)) => 9)
-    (fact (count (owl/annotation-axioms ontology human testProperty)) => 1)
-    (owl/remove-annotations! ontology human testProperty)
-    (fact (owl/annotations ontology human testProperty) => [])
-    (fact (count (owl/annotation-axioms ontology human)) => 8)
-    (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
-    
-    ; Work with resource annotation
-    (owl/annotate! ontology human testProperty (owl/expand "http://foo"))
-    (fact (owl/annotations ontology human testProperty) => ["http://foo"])
-    (owl/remove-annotations! ontology human testProperty)
+    ; Replace label, demoting existing labels to synonyms with annotations
+    (owl/relabel! ontology human "Human"
+                  hasExactSynonym hasSynonymType (owl/expand scientificName))
+    (fact (owl/label ontology human) => "Human")
+    (fact (owl/labels ontology human) => ["Human"])
+    (fact (owl/annotations+ ontology human "rdfs:label") =>
+          (contains [["Human" []]]))
+    (fact (owl/annotations+ ontology human hasExactSynonym) =>
+          (contains [["Homo sapiens" []]
+                     ["Human"        [[hasSynonymType scientificName]]]
+                     ["man"          [["rdfs:comment" "UHGouhawiefuh"]]]
+                     ["human"        [["rdfs:comment" "foo"]]]]
+                    :in-any-order))
 
-    ; Annotated annotations
-    (fact (count (owl/annotations+ ontology human)) => 8)
-    (fact (count (owl/annotations+ ontology human testProperty)) => 0)
-    (owl/annotate+! ontology human
-                    testProperty (owl/expand "http://foo")
-                    "rdfs:comment" "FOO")
-    (fact (count (owl/annotations+ ontology human testProperty)) => 1)
-    (fact (owl/annotations+ ontology human testProperty) =>
-          [["http://foo" [["rdfs:comment" "FOO"]]]])
-    (fact (owl/annotations+ ontology human testProperty "http://foo") =>
-          [["rdfs:comment" "FOO"]])
-    (fact (owl/annotation+ ontology human testProperty) =>
-          ["http://foo" [["rdfs:comment" "FOO"]]])
-    (fact (owl/annotation+ ontology human testProperty "http://foo") =>
-          ["rdfs:comment" "FOO"])
-
+    ; Replace label with annotation,
+    ; reassigning existing labels to synonyms with annotations
+    (owl/relabel! ontology human "Human"
+                  hasSynonymType (owl/expand scientificName)
+                  hasExactSynonym hasSynonymType (owl/expand scientificName))
+    (fact (owl/label ontology human) => "Human")
+    (fact (owl/labels ontology human) => ["Human"])
+    (fact (owl/annotations+ ontology human "rdfs:label") =>
+          (contains [["Human" [[hasSynonymType scientificName]]]]))
+    (fact (owl/annotations+ ontology human hasExactSynonym) =>
+          (contains [["Homo sapiens" []]
+                     ["Human"        [[hasSynonymType scientificName]]]
+                     ["man"          [["rdfs:comment" "UHGouhawiefuh"]]]
+                     ["human"        [["rdfs:comment" "foo"]]]]
+                    :in-any-order))
 
     ; Test ancestry
     (fact "human is a primate"

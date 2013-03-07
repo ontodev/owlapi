@@ -3056,14 +3056,14 @@ reasoner for Protégé.</p>
                                   OWLClassExpression OWLClass OWLAnnotation
                                   OWLAxiom OWLAnnotationAssertionAxiom
                                   OWLNamedObject OWLLiteral OWLObjectProperty)
-    (org.semanticweb.owlapi.apibinding OWLManager) 
+    (org.semanticweb.owlapi.apibinding OWLManager)
     (org.semanticweb.owlapi.io RDFXMLOntologyFormat)
     (org.semanticweb.owlapi.util DefaultPrefixManager)
     (org.semanticweb.owlapi.reasoner InferenceType)
-    (org.semanticweb.owlapi.util InferredAxiomGenerator 
+    (org.semanticweb.owlapi.util InferredAxiomGenerator
                                  InferredSubClassAxiomGenerator
                                  InferredEquivalentClassAxiomGenerator
-                                 InferredDisjointClassesAxiomGenerator 
+                                 InferredDisjointClassesAxiomGenerator
                                  InferredClassAssertionAxiomGenerator
                                  InferredOntologyGenerator
                                  OWLOntologyMerger)
@@ -3127,17 +3127,17 @@ convert back and forth between strings, IRIs, and objects.</p>
   (cond (and (string? curie) (.startsWith curie &quot;http:&quot;)) (IRI/create curie)
         (string? curie) (.getIRI prefixes curie)
         (number? curie) (.getIRI prefixes (str curie))
-        (instance? OWLNamedObject curie) (.getIRI curie) 
+        (instance? OWLNamedObject curie) (.getIRI curie)
         :else (throw (Exception. (str &quot;Cannot expand &quot; curie)))))</pre></td></tr><tr><td class="docs"><p>Take an object and return a CURIE string.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn shorten
   [curie]
   (cond (string? curie)
-          (-&gt; (.getShortForm prefixes (IRI/create curie)) 
+          (-&gt; (.getShortForm prefixes (IRI/create curie))
               .toString
               (string/replace #&quot;^&lt;|&gt;$&quot; &quot;&quot;)) ; have to strip angle brackets
         (instance? OWLNamedObject curie)
           (string/replace (.toString (.getShortForm prefixes curie))
-                          #&quot;^&lt;|&gt;$&quot; &quot;&quot;) 
+                          #&quot;^&lt;|&gt;$&quot; &quot;&quot;)
         :else (throw (Exception. (str &quot;Cannot shorten &quot; curie)))))</pre></td></tr><tr><td class="docs"><p>Check whether a CURIE string is inside a namespace.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn in-namespace?
   [namespace curie]
@@ -3145,12 +3145,12 @@ convert back and forth between strings, IRIs, and objects.</p>
                (if (.containsPrefixMapping prefixes (append-colon namespace))
                  (.getPrefix prefixes (append-colon namespace))
                  namespace)))</pre></td></tr><tr><td class="docs"><h2>Object Properties</h2>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Take a CURIE string and return an object property. If the argument is 
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Take a CURIE string and return an object property. If the argument is
    already an OWLObjectProperty then it is just returned.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn property
   [curie]
   (cond
-    (string? curie) (.getOWLObjectProperty data-factory (expand curie)) 
+    (string? curie) (.getOWLObjectProperty data-factory (expand curie))
     (instance? OWLObjectProperty curie) curie
     :else (throw (Exception. (str &quot;Unknown type in owlapi/property for &quot;
                                   curie)))))</pre></td></tr><tr><td class="docs"><h2>Classes</h2>
@@ -3171,7 +3171,7 @@ convert back and forth between strings, IRIs, and objects.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn class
   [curie]
   (cond
-    (string? curie) (.getOWLClass data-factory (expand curie)) 
+    (string? curie) (.getOWLClass data-factory (expand curie))
     (instance? OWLClassExpression curie) curie
     :else (throw (Exception. (str &quot;Unknown type in owlapi/class for &quot; curie)))))</pre></td></tr><tr><td class="docs"><h2>Class Expressions</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Create an OWLObjectUnionOf class expression from a list of CURIE strings.</p>
@@ -3196,7 +3196,7 @@ convert back and forth between strings, IRIs, and objects.</p>
   [property-curie class-curie]
   (.getOWLObjectSomeValuesFrom data-factory
                                (property property-curie)
-                               (class class-curie)))</pre></td></tr><tr><td class="docs"><p>Assert that two classes, or a class and a class expression, are 
+                               (class class-curie)))</pre></td></tr><tr><td class="docs"><p>Assert that two classes, or a class and a class expression, are
    OWLEquivalentClasses.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn equivalent!
   [ontology curie1 curie2]
@@ -3223,7 +3223,7 @@ convert back and forth between strings, IRIs, and objects.</p>
   [reasoner curie]
   (map shorten
        (-&gt; (class curie)
-           (#(.getSubClasses reasoner % false)) 
+           (#(.getSubClasses reasoner % false))
            .getFlattened
            .iterator
            iterator-seq)))</pre></td></tr><tr><td class="docs"><p>Return a list of CURIE strings for all the direct superclasses.</p>
@@ -3239,7 +3239,7 @@ convert back and forth between strings, IRIs, and objects.</p>
   (first (parents ontology curie)))</pre></td></tr><tr><td class="docs"><p>Remove all superclasses from this class.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn orphan!
   [ontology curie]
-  (.removeAxioms manager ontology 
+  (.removeAxioms manager ontology
                  (.getSubClassAxiomsForSubClass ontology (class curie))))</pre></td></tr><tr><td class="docs"><p>Add this child as a sublclass of the parent.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn parent!
   [ontology child-curie parent-curie]
@@ -3251,14 +3251,14 @@ convert back and forth between strings, IRIs, and objects.</p>
    multiple parents, only one is chosen!</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ancestry
   ([ontology curie] (ancestry ontology curie parent))
-  ([ontology curie func] 
+  ([ontology curie func]
    (let [parent (func ontology curie)]
      (if parent
        (cons curie (lazy-seq (ancestry ontology parent func)))
        [curie]))))</pre></td></tr><tr><td class="docs"><p>Return an ordered list of CURIE strings of ancestors, not including this
    class. Uses <code>ancestry</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ancestors
-  ([ontology curie] (ancestors ontology curie parent)) 
+  ([ontology curie] (ancestors ontology curie parent))
   ([ontology curie func] (drop 1 (ancestry ontology curie func))))</pre></td></tr><tr><td class="docs"><h2>Annotations</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Get an OWLLiteral for a value. This is a very basic implementation.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn literal
@@ -3287,7 +3287,7 @@ convert back and forth between strings, IRIs, and objects.</p>
                         (.iterator (.getAnnotations class ontology)))]
       (map #(vector (shorten (.getProperty %)) (get-value (.getValue %)))
            annotations)))
-  ([ontology curie property-curie] 
+  ([ontology curie property-curie]
     (let [class    (class curie)
           property (.getOWLAnnotationProperty data-factory
                                               (expand property-curie))
@@ -3311,20 +3311,20 @@ convert back and forth between strings, IRIs, and objects.</p>
   ([ontology curie]
     (let [axioms (annotation-axioms ontology curie)]
       (map axiom-annotations axioms)))
-  ([ontology curie property-curie] 
+  ([ontology curie property-curie]
     (let [axioms (annotation-axioms ontology curie property-curie)]
-      (map rest (map axiom-annotations axioms)))) 
-  ([ontology curie property-curie value] 
+      (map rest (map axiom-annotations axioms))))
+  ([ontology curie property-curie value]
    (-&gt;&gt; (annotations+ ontology curie property-curie)
-        (filter #(= (first %) value))    
+        (filter #(= (first %) value))
         first
         last)))</pre></td></tr><tr><td class="docs"><p>Get the first annotated annotation on a CURIE for a given property, if any,
    or restruct to the first annotation for a given property and value.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn annotation+
-  ([ontology curie property-curie] 
+  ([ontology curie property-curie]
     (first (annotations+ ontology curie property-curie)))
-  ([ontology curie property-curie value] 
-    (first (annotations+ ontology curie property-curie value)))) </pre></td></tr><tr><td class="docs"><p>Add an annotation to a CURIE with a given property and value.</p>
+  ([ontology curie property-curie value]
+    (first (annotations+ ontology curie property-curie value))))</pre></td></tr><tr><td class="docs"><p>Add an annotation to a CURIE with a given property and value.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn annotate!
   [ontology curie property-curie content]
   (let [iri      (expand curie)
@@ -3340,7 +3340,7 @@ convert back and forth between strings, IRIs, and objects.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn annotate+!
   [ontology curie property-curie content
    annotation-property-curie annotation-content]
-  (let [iri          (expand curie) 
+  (let [iri          (expand curie)
         property     (.getOWLAnnotationProperty data-factory
                                                 (expand property-curie))
         value        (if (string? content)
@@ -3368,7 +3368,7 @@ convert back and forth between strings, IRIs, and objects.</p>
     (doseq [axiom (annotation-axioms ontology curie property-curie)]
       (.removeAxiom manager ontology axiom))))</pre></td></tr><tr><td class="docs"><h2>Labels</h2>
 
-<p>rdfs:label annotations are a common case, so we provide convenience 
+<p>rdfs:label annotations are a common case, so we provide convenience
 functions.</p>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Get a list of the rdfs:labels for a CURIE.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn labels
@@ -3383,20 +3383,48 @@ functions.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn remove-labels!
   [ontology curie]
   (doseq [axiom (label-axioms ontology curie)]
-    (.removeAxiom manager ontology axiom))) </pre></td></tr><tr><td class="docs"><p>Add an rdfs:label for a CURIE.</p>
+    (.removeAxiom manager ontology axiom)))</pre></td></tr><tr><td class="docs"><p>Add an rdfs:label for a CURIE, with an optional annotation.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn label!
-  [ontology curie value]
-  (annotate! ontology curie &quot;rdfs:label&quot; value))</pre></td></tr><tr><td class="docs"><p>Relabel a CURIE. Either removes all other labels or assigns them to a
-   given property.</p>
+  ([ontology curie value]
+    (annotate! ontology curie &quot;rdfs:label&quot; value))
+  ([ontology curie value annotation-property annotation-value]
+    (annotate+! ontology curie &quot;rdfs:label&quot; value
+                annotation-property annotation-value)))</pre></td></tr><tr><td class="docs"><p>Relabel a CURIE. Either removes all other labels,
+   or reassigns them to a given property,
+   or removes others and annotates the new label,
+   or annotations the new label and reassigns to a given property
+   with an annotation.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn relabel!
   ([ontology curie value]
    (remove-labels! ontology curie)
    (label! ontology curie value))
-  ([ontology curie property-curie value]
+  ([ontology curie value reassign-property]
    (let [labels (labels ontology curie)]
-     (doseq [label labels] (annotate! ontology curie property-curie label))
+     (doseq [label labels]
+            (annotate! ontology curie reassign-property label))
      (remove-labels! ontology curie)
-     (label! ontology curie value))))</pre></td></tr><tr><td class="docs"><h2>Working with Classes</h2>
+     (label! ontology curie value)))
+  ([ontology curie value annotation-property annotation-value]
+   (let [labels (labels ontology curie)]
+     (remove-labels! ontology curie)
+     (label! ontology curie value annotation-property annotation-value)))
+  ([ontology curie value
+    reassign-property reassign-annotation-property reassign-annotation-value]
+   (let [labels (labels ontology curie)]
+     (doseq [label labels]
+            (annotate+! ontology curie reassign-property label
+                        reassign-annotation-property reassign-annotation-value))
+     (remove-labels! ontology curie)
+     (label! ontology curie value)))
+  ([ontology curie value
+    annotation-property annotation-value
+    reassign-property reassign-annotation-property reassign-annotation-value]
+   (let [labels (labels ontology curie)]
+     (doseq [label labels]
+            (annotate+! ontology curie reassign-property label
+                        reassign-annotation-property reassign-annotation-value))
+     (remove-labels! ontology curie)
+     (label! ontology curie value annotation-property annotation-value))))</pre></td></tr><tr><td class="docs"><h2>Working with Classes</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Return a list of axioms for the given entity.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn axioms
   [ontology curie]
@@ -3406,8 +3434,8 @@ functions.</p>
   ([ontology curie label] (add-class! ontology curie nil label))
   ([ontology curie parent-curie label]
     (log/debugf &quot;Adding class '%s'&quot; curie)
-    (let [axiom (declare-class! ontology curie)] 
-      (when parent-curie (parent! ontology curie parent-curie)) 
+    (let [axiom (declare-class! ontology curie)]
+      (when parent-curie (parent! ontology curie parent-curie))
       (when label (annotate! ontology curie &quot;rdfs:label&quot; label))
       axiom)))</pre></td></tr><tr><td class="docs"><p>Copy a class, with all axioms and annotations, from one ontology to another.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn copy-class!
