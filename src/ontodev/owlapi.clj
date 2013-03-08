@@ -154,7 +154,8 @@
   (let [iri    (expand curie)
         class  (.getOWLClass data-factory iri)
         axiom  (.getOWLDeclarationAxiom data-factory class)]
-    (.addAxiom manager ontology axiom)))
+    (.addAxiom manager ontology axiom)
+    axiom))
 
 (defn classes
   "List the classes in the ontology as a list of CURIE strings."
@@ -212,18 +213,20 @@
   "Assert that two classes, or a class and a class expression, are
    OWLEquivalentClasses."
   [ontology curie1 curie2]
-  (.addAxiom manager ontology
-             (.getOWLEquivalentClassesAxiom data-factory
-                                            (class curie1) (class curie2))))
+  (let [axiom (.getOWLEquivalentClassesAxiom
+                data-factory (class curie1) (class curie2))]
+    (.addAxiom manager ontology axiom)
+    axiom))
 
 (defn disjoint!
   "Assert that a list of classes are OWLDisjointClasses."
   [ontology curies]
   (when (second curies) ; minimum two classes
     (let [classes (map class curies)
-          array   (into-array OWLClassExpression classes)]
-      (.addAxiom manager ontology
-                 (.getOWLDisjointClassesAxiom data-factory array)))))
+          array   (into-array OWLClassExpression classes)
+          axiom   (.getOWLDisjointClassesAxiom data-factory array)]
+      (.addAxiom manager ontology axiom)
+      axiom)))
 
 
 ;; # Class Hierarchy
@@ -271,10 +274,10 @@
 (defn parent!
   "Add this child as a sublclass of the parent."
   [ontology child-curie parent-curie]
-  (.addAxiom manager ontology
-             (.getOWLSubClassOfAxiom data-factory
-                                     (class child-curie)
-                                     (class parent-curie))))
+  (let [axiom (.getOWLSubClassOfAxiom
+                data-factory (class child-curie) (class parent-curie))]
+    (.addAxiom manager ontology axiom)
+    axiom))
 
 (defn ancestry
   "Return a lazy sequence of CURIE strings for all ancestors, starting with
@@ -320,6 +323,9 @@
          axioms       (annotation-axioms ontology curie)]
      (filter #(= property-iri (.getIRI (.getProperty %))) axioms))))
 
+;; Get the first annotation axiom, if any.
+(def annotation-axiom (comp first annotation-axioms))
+
 (defn annotations
   "Get a list of properties and values for all the annotations on this CURIE,
    or restrict the list to just the values of some property."
@@ -337,10 +343,8 @@
                         (.iterator (.getAnnotations class ontology property)))]
       (map #(get-value (.getValue %)) annotations))))
 
-(defn annotation
-  "Get the first annotation on a CURIE for a given property, if any."
-  [ontology curie property-curie]
-  (first (annotations ontology curie property-curie)))
+;; Get the first annotation axiom, if any.
+(def annotation (comp first annotations))
 
 (defn axiom-annotations
   "Given an axiom, get the property, value,
@@ -387,29 +391,32 @@
                    content)
         axiom    (.getOWLAnnotationAssertionAxiom data-factory
                                                   property iri value)]
-    (.addAxiom manager ontology axiom)))
+    (.addAxiom manager ontology axiom)
+    axiom))
+
+(defn annotate-axiom!
+  "Add an annotation to an Axiom with a given property and value."
+  [ontology axiom property-curie content]
+  (let [property   (.getOWLAnnotationProperty data-factory
+                                              (expand property-curie))
+        value      (if (string? content)
+                     (.getOWLLiteral data-factory content)
+                     content)
+        annotation (.getOWLAnnotation data-factory property value)
+        axiom2     (.getAnnotatedAxiom axiom #{annotation})]
+    (.removeAxiom manager ontology axiom)
+    (.addAxiom manager ontology axiom2)
+    axiom2))
 
 (defn annotate+!
   "Add an annotated annotation to a CURIE with a given property and value,
    and annotation-property and annotation-value."
   [ontology curie property-curie content
    annotation-property-curie annotation-content]
-  (let [iri          (expand curie)
-        property     (.getOWLAnnotationProperty data-factory
-                                                (expand property-curie))
-        value        (if (string? content)
-                       (.getOWLLiteral data-factory content)
-                       content)
-        ann-property (.getOWLAnnotationProperty data-factory
-                                            (expand annotation-property-curie))
-        ann-value    (if (string? annotation-content)
-                       (.getOWLLiteral data-factory annotation-content)
-                       annotation-content)
-        annotation   (.getOWLAnnotation data-factory ann-property ann-value)
-        axiom        (.getOWLAnnotationAssertionAxiom data-factory
-                                                      property iri value
-                                                      #{annotation})]
-    (.addAxiom manager ontology axiom)))
+  (let [axiom (annotate! ontology curie property-curie content) ]
+    (println "AXIOM?" axiom)
+    (annotate-axiom! ontology axiom
+                     annotation-property-curie annotation-content)))
 
 (defn copy-annotations!
   "Copy all annotation axioms for a CURIE from one ontology to another."

@@ -3160,7 +3160,8 @@ convert back and forth between strings, IRIs, and objects.</p>
   (let [iri    (expand curie)
         class  (.getOWLClass data-factory iri)
         axiom  (.getOWLDeclarationAxiom data-factory class)]
-    (.addAxiom manager ontology axiom)))</pre></td></tr><tr><td class="docs"><p>List the classes in the ontology as a list of CURIE strings.</p>
+    (.addAxiom manager ontology axiom)
+    axiom))</pre></td></tr><tr><td class="docs"><p>List the classes in the ontology as a list of CURIE strings.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn classes
   [ontology]
   (map shorten (iterator-seq (.iterator (.getClassesInSignature ontology)))))</pre></td></tr><tr><td class="docs"><p>Check whether the class is in the signature of the ontology.</p>
@@ -3200,16 +3201,18 @@ convert back and forth between strings, IRIs, and objects.</p>
    OWLEquivalentClasses.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn equivalent!
   [ontology curie1 curie2]
-  (.addAxiom manager ontology
-             (.getOWLEquivalentClassesAxiom data-factory
-                                            (class curie1) (class curie2))))</pre></td></tr><tr><td class="docs"><p>Assert that a list of classes are OWLDisjointClasses.</p>
+  (let [axiom (.getOWLEquivalentClassesAxiom
+                data-factory (class curie1) (class curie2))]
+    (.addAxiom manager ontology axiom)
+    axiom))</pre></td></tr><tr><td class="docs"><p>Assert that a list of classes are OWLDisjointClasses.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn disjoint!
   [ontology curies]
   (when (second curies) ; minimum two classes
     (let [classes (map class curies)
-          array   (into-array OWLClassExpression classes)]
-      (.addAxiom manager ontology
-                 (.getOWLDisjointClassesAxiom data-factory array)))))</pre></td></tr><tr><td class="docs"><h1>Class Hierarchy</h1>
+          array   (into-array OWLClassExpression classes)
+          axiom   (.getOWLDisjointClassesAxiom data-factory array)]
+      (.addAxiom manager ontology axiom)
+      axiom)))</pre></td></tr><tr><td class="docs"><h1>Class Hierarchy</h1>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Return a list of CURIE strings of the direct subclasses.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn children
   [ontology curie]
@@ -3243,10 +3246,10 @@ convert back and forth between strings, IRIs, and objects.</p>
                  (.getSubClassAxiomsForSubClass ontology (class curie))))</pre></td></tr><tr><td class="docs"><p>Add this child as a sublclass of the parent.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn parent!
   [ontology child-curie parent-curie]
-  (.addAxiom manager ontology
-             (.getOWLSubClassOfAxiom data-factory
-                                     (class child-curie)
-                                     (class parent-curie))))</pre></td></tr><tr><td class="docs"><p>Return a lazy sequence of CURIE strings for all ancestors, starting with
+  (let [axiom (.getOWLSubClassOfAxiom
+                data-factory (class child-curie) (class parent-curie))]
+    (.addAxiom manager ontology axiom)
+    axiom))</pre></td></tr><tr><td class="docs"><p>Return a lazy sequence of CURIE strings for all ancestors, starting with
    this CURIE. Uses the <code>parent</code> function by default. NOTE: If there are
    multiple parents, only one is chosen!</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ancestry
@@ -3278,7 +3281,8 @@ convert back and forth between strings, IRIs, and objects.</p>
   ([ontology curie property-curie]
    (let [property-iri (expand property-curie)
          axioms       (annotation-axioms ontology curie)]
-     (filter #(= property-iri (.getIRI (.getProperty %))) axioms))))</pre></td></tr><tr><td class="docs"><p>Get a list of properties and values for all the annotations on this CURIE,
+     (filter #(= property-iri (.getIRI (.getProperty %))) axioms))))</pre></td></tr><tr><td class="docs"><p>Get the first annotation axiom, if any.</p>
+</td><td class="codes"><pre class="brush: clojure">(def annotation-axiom (comp first annotation-axioms))</pre></td></tr><tr><td class="docs"><p>Get a list of properties and values for all the annotations on this CURIE,
    or restrict the list to just the values of some property.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn annotations
   ([ontology curie]
@@ -3293,10 +3297,8 @@ convert back and forth between strings, IRIs, and objects.</p>
                                               (expand property-curie))
           annotations (iterator-seq
                         (.iterator (.getAnnotations class ontology property)))]
-      (map #(get-value (.getValue %)) annotations))))</pre></td></tr><tr><td class="docs"><p>Get the first annotation on a CURIE for a given property, if any.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn annotation
-  [ontology curie property-curie]
-  (first (annotations ontology curie property-curie)))</pre></td></tr><tr><td class="docs"><p>Given an axiom, get the property, value,
+      (map #(get-value (.getValue %)) annotations))))</pre></td></tr><tr><td class="docs"><p>Get the first annotation axiom, if any.</p>
+</td><td class="codes"><pre class="brush: clojure">(def annotation (comp first annotations))</pre></td></tr><tr><td class="docs"><p>Given an axiom, get the property, value,
    and a vector of annotation properties and values.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn axiom-annotations
   [axiom]
@@ -3335,27 +3337,28 @@ convert back and forth between strings, IRIs, and objects.</p>
                    content)
         axiom    (.getOWLAnnotationAssertionAxiom data-factory
                                                   property iri value)]
-    (.addAxiom manager ontology axiom)))</pre></td></tr><tr><td class="docs"><p>Add an annotated annotation to a CURIE with a given property and value,
+    (.addAxiom manager ontology axiom)
+    axiom))</pre></td></tr><tr><td class="docs"><p>Add an annotation to an Axiom with a given property and value.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn annotate-axiom!
+  [ontology axiom property-curie content]
+  (let [property   (.getOWLAnnotationProperty data-factory
+                                              (expand property-curie))
+        value      (if (string? content)
+                     (.getOWLLiteral data-factory content)
+                     content)
+        annotation (.getOWLAnnotation data-factory property value)
+        axiom2     (.getAnnotatedAxiom axiom #{annotation})]
+    (.removeAxiom manager ontology axiom)
+    (.addAxiom manager ontology axiom2)
+    axiom2))</pre></td></tr><tr><td class="docs"><p>Add an annotated annotation to a CURIE with a given property and value,
    and annotation-property and annotation-value.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn annotate+!
   [ontology curie property-curie content
    annotation-property-curie annotation-content]
-  (let [iri          (expand curie)
-        property     (.getOWLAnnotationProperty data-factory
-                                                (expand property-curie))
-        value        (if (string? content)
-                       (.getOWLLiteral data-factory content)
-                       content)
-        ann-property (.getOWLAnnotationProperty data-factory
-                                            (expand annotation-property-curie))
-        ann-value    (if (string? annotation-content)
-                       (.getOWLLiteral data-factory annotation-content)
-                       annotation-content)
-        annotation   (.getOWLAnnotation data-factory ann-property ann-value)
-        axiom        (.getOWLAnnotationAssertionAxiom data-factory
-                                                      property iri value
-                                                      #{annotation})]
-    (.addAxiom manager ontology axiom)))</pre></td></tr><tr><td class="docs"><p>Copy all annotation axioms for a CURIE from one ontology to another.</p>
+  (let [axiom (annotate! ontology curie property-curie content) ]
+    (println &quot;AXIOM?&quot; axiom)
+    (annotate-axiom! ontology axiom
+                     annotation-property-curie annotation-content)))</pre></td></tr><tr><td class="docs"><p>Copy all annotation axioms for a CURIE from one ontology to another.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn copy-annotations!
   [from-ontology curie to-ontology]
   (.addAxioms manager to-ontology

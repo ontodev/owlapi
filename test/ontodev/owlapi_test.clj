@@ -99,8 +99,8 @@
     (fact (owl/annotations+ ontology human "rdfs:label") =>
           (contains [["Homo sapiens" [[hasSynonymType scientificName]]]]))
     (fact (owl/annotations+ ontology human hasExactSynonym) =>
-          (contains [["man"   [["rdfs:comment" "UHGouhawiefuh"]]]
-                     ["human" [["rdfs:comment" "foo"]]]]
+          (contains [["man"   []]
+                     ["human" [["rdfs:comment" "Xoiyaeuod"]]]]
                     :in-any-order))
 
     ; Replace label, reassigning existing labels to synonyms
@@ -120,8 +120,8 @@
     (fact (owl/annotations+ ontology human hasExactSynonym) =>
           (contains [["Homo sapiens" []]
                      ["Human"        [[hasSynonymType scientificName]]]
-                     ["man"          [["rdfs:comment" "UHGouhawiefuh"]]]
-                     ["human"        [["rdfs:comment" "foo"]]]]
+                     ["man"          []]
+                     ["human"        [["rdfs:comment" "Xoiyaeuod"]]]]
                     :in-any-order))
 
     ; Replace label with annotation,
@@ -136,8 +136,8 @@
     (fact (owl/annotations+ ontology human hasExactSynonym) =>
           (contains [["Homo sapiens" []]
                      ["Human"        [[hasSynonymType scientificName]]]
-                     ["man"          [["rdfs:comment" "UHGouhawiefuh"]]]
-                     ["human"        [["rdfs:comment" "foo"]]]]
+                     ["man"          []]
+                     ["human"        [["rdfs:comment" "Xoiyaeuod"]]]]
                     :in-any-order))
 
     ; Test ancestry
