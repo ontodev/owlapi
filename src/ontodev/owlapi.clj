@@ -414,7 +414,6 @@
   [ontology curie property-curie content
    annotation-property-curie annotation-content]
   (let [axiom (annotate! ontology curie property-curie content) ]
-    (println "AXIOM?" axiom)
     (annotate-axiom! ontology axiom
                      annotation-property-curie annotation-content)))
 

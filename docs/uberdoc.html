@@ -3356,7 +3356,6 @@ convert back and forth between strings, IRIs, and objects.</p>
   [ontology curie property-curie content
    annotation-property-curie annotation-content]
   (let [axiom (annotate! ontology curie property-curie content) ]
-    (println &quot;AXIOM?&quot; axiom)
     (annotate-axiom! ontology axiom
                      annotation-property-curie annotation-content)))</pre></td></tr><tr><td class="docs"><p>Copy all annotation axioms for a CURIE from one ontology to another.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn copy-annotations!
