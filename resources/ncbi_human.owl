@@ -492,15 +492,28 @@
     </owl:Class>
     <owl:Axiom>
         <owl:annotatedTarget rdf:datatype="&xsd;string">human</owl:annotatedTarget>
-        <rdfs:comment>foo</rdfs:comment>
+        <rdfs:comment>Xoiyaeuod</rdfs:comment>
         <owl:annotatedSource rdf:resource="&obo;NCBITaxon_9606"/>
         <owl:annotatedProperty rdf:resource="&oboInOwl;hasExactSynonym"/>
     </owl:Axiom>
+
+
+    <!-- http://purl.obolibrary.org/obo/NCBITaxon_28384 -->
+
+    <owl:Class rdf:about="http://purl.obolibrary.org/obo/NCBITaxon_28384">
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">other sequences</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://iedb.org/IEDBTaxon_28384+12908"/>
+        <rdfs:subClassOf rdf:resource="http://purl.obolibrary.org/obo/NCBITaxon_1"/>
+        <oboInOwl:hasDbXref rdf:datatype="http://www.w3.org/2001/XMLSchema#string">GC_ID:11</oboInOwl:hasDbXref>
+        <oboInOwl:hasOBONamespace rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ncbi_taxonomy</oboInOwl:hasOBONamespace>
+        <oboInOwl:hasRelatedSynonym rdf:datatype="http://www.w3.org/2001/XMLSchema#string">other sequences</oboInOwl:hasRelatedSynonym>
+        <obo:NCBITaxon_browser_link rdf:resource="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=28384"/>
+    </owl:Class>
     <owl:Axiom>
-        <owl:annotatedTarget rdf:datatype="&xsd;string">man</owl:annotatedTarget>
-        <rdfs:comment>UHGouhawiefuh</rdfs:comment>
-        <owl:annotatedSource rdf:resource="&obo;NCBITaxon_9606"/>
-        <owl:annotatedProperty rdf:resource="&oboInOwl;hasExactSynonym"/>
+        <owl:annotatedTarget rdf:datatype="http://www.w3.org/2001/XMLSchema#string">other sequences</owl:annotatedTarget>
+        <owl:annotatedSource rdf:resource="http://purl.obolibrary.org/obo/NCBITaxon_28384"/>
+        <oboInOwl:hasSynonymType rdf:resource="http://purl.obolibrary.org/obo/ncbitaxon#blast_name"/>
+        <owl:annotatedProperty rdf:resource="http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"/>
     </owl:Axiom>
     
 
