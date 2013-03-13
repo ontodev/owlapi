@@ -3267,7 +3267,6 @@ convert back and forth between strings, IRIs, and objects.</p>
 <h2>Annotations</h2>
 </td><td class="codes"><pre class="brush: clojure">(defn literal?
   [value]
-  (println value (type value))
   (cond
     (string? value) true
     (instance? Boolean value) true

@@ -301,7 +301,6 @@
 (defn literal?
   "Get an OWLLiteral for a value. This is a very basic implementation."
   [value]
-  (println value (type value))
   (cond
     (string? value) true
     (instance? Boolean value) true
