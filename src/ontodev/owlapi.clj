@@ -298,6 +298,18 @@
 
 
 ;; ## Annotations
+(defn literal?
+  "Get an OWLLiteral for a value. This is a very basic implementation."
+  [value]
+  (println value (type value))
+  (cond
+    (string? value) true
+    (instance? Boolean value) true
+    (instance? Integer value) true
+    (instance? Double value) true
+    (instance? Float value) true
+    (instance? Long value) true
+    :else false))
 
 (defn literal
   "Get an OWLLiteral for a value. This is a very basic implementation."
@@ -386,9 +398,7 @@
   (let [iri      (expand curie)
         property (.getOWLAnnotationProperty data-factory
                                             (expand property-curie))
-        value    (if (string? content)
-                   (.getOWLLiteral data-factory content)
-                   content)
+        value    (if (literal? content) (literal content) content)
         axiom    (.getOWLAnnotationAssertionAxiom data-factory
                                                   property iri value)]
     (.addAxiom manager ontology axiom)
@@ -399,9 +409,7 @@
   [ontology axiom property-curie content]
   (let [property   (.getOWLAnnotationProperty data-factory
                                               (expand property-curie))
-        value      (if (string? content)
-                     (.getOWLLiteral data-factory content)
-                     content)
+        value    (if (literal? content) (literal content) content)
         annotation (.getOWLAnnotation data-factory property value)
         axiom2     (.getAnnotatedAxiom axiom #{annotation})]
     (.removeAxiom manager ontology axiom)

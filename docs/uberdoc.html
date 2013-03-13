@@ -3262,8 +3262,20 @@ convert back and forth between strings, IRIs, and objects.</p>
    class. Uses <code>ancestry</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ancestors
   ([ontology curie] (ancestors ontology curie parent))
-  ([ontology curie func] (drop 1 (ancestry ontology curie func))))</pre></td></tr><tr><td class="docs"><h2>Annotations</h2>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Get an OWLLiteral for a value. This is a very basic implementation.</p>
+  ([ontology curie func] (drop 1 (ancestry ontology curie func))))</pre></td></tr><tr><td class="docs"><p>Get an OWLLiteral for a value. This is a very basic implementation.</p>
+
+<h2>Annotations</h2>
+</td><td class="codes"><pre class="brush: clojure">(defn literal?
+  [value]
+  (println value (type value))
+  (cond
+    (string? value) true
+    (instance? Boolean value) true
+    (instance? Integer value) true
+    (instance? Double value) true
+    (instance? Float value) true
+    (instance? Long value) true
+    :else false))</pre></td></tr><tr><td class="docs"><p>Get an OWLLiteral for a value. This is a very basic implementation.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn literal
   [value]
   (.getOWLLiteral data-factory value))</pre></td></tr><tr><td class="docs"><p>Get a value from a literal, usually a string.</p>
@@ -3332,9 +3344,7 @@ convert back and forth between strings, IRIs, and objects.</p>
   (let [iri      (expand curie)
         property (.getOWLAnnotationProperty data-factory
                                             (expand property-curie))
-        value    (if (string? content)
-                   (.getOWLLiteral data-factory content)
-                   content)
+        value    (if (literal? content) (literal content) content)
         axiom    (.getOWLAnnotationAssertionAxiom data-factory
                                                   property iri value)]
     (.addAxiom manager ontology axiom)
@@ -3343,9 +3353,7 @@ convert back and forth between strings, IRIs, and objects.</p>
   [ontology axiom property-curie content]
   (let [property   (.getOWLAnnotationProperty data-factory
                                               (expand property-curie))
-        value      (if (string? content)
-                     (.getOWLLiteral data-factory content)
-                     content)
+        value    (if (literal? content) (literal content) content)
         annotation (.getOWLAnnotation data-factory property value)
         axiom2     (.getAnnotatedAxiom axiom #{annotation})]
     (.removeAxiom manager ontology axiom)

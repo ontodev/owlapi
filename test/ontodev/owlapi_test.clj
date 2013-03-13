@@ -14,6 +14,12 @@
 (def scientificName "http://purl.obolibrary.org/obo/ncbitaxon#scientific_name")
 (def testProperty "http://foo.bar/testProperty")
 
+(fact (owl/literal? "string") => true)
+(fact (owl/literal? true) => true)
+(fact (owl/literal? 100) => true)
+(fact (owl/literal? 100.00) => true)
+(fact (owl/literal? str) => false)
+
 (let [ontology (owl/load-ontology human-path)]
   (try
     (fact ontology => truthy)
@@ -41,8 +47,8 @@
     (fact (owl/annotations ontology human testProperty) => [])
     (fact (count (owl/annotation-axioms ontology human)) => 7)
     (fact (count (owl/annotation-axioms ontology human testProperty)) => 0)
-    (owl/annotate! ontology human testProperty "FOO")
-    (fact (owl/annotations ontology human testProperty) => ["FOO"])
+    (owl/annotate! ontology human testProperty 100)
+    (fact (owl/annotations ontology human testProperty) => ["100"])
     (fact (count (owl/annotation-axioms ontology human)) => 8)
     (fact (count (owl/annotation-axioms ontology human testProperty)) => 1)
     (owl/remove-annotations! ontology human testProperty)
