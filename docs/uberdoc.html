@@ -3242,7 +3242,10 @@ convert back and forth between strings, IRIs, and objects.</p>
   (first (parents ontology curie)))</pre></td></tr><tr><td class="docs"><p>Return the CURIEs of the sibling classes.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn siblings
   [ontology curie]
-  (remove #(= curie %) (children ontology (parent ontology curie))))</pre></td></tr><tr><td class="docs"><p>Remove all superclasses from this class.</p>
+  (let [parent-curie (parent ontology curie)]
+    (if parent-curie
+      (remove #(= curie %) (children ontology parent-curie)) 
+      nil)))</pre></td></tr><tr><td class="docs"><p>Remove all superclasses from this class.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn orphan!
   [ontology curie]
   (.removeAxioms manager ontology

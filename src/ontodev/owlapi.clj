@@ -268,7 +268,10 @@
 (defn siblings
   "Return the CURIEs of the sibling classes."
   [ontology curie]
-  (remove #(= curie %) (children ontology (parent ontology curie))))
+  (let [parent-curie (parent ontology curie)]
+    (if parent-curie
+      (remove #(= curie %) (children ontology parent-curie)) 
+      nil)))
 
 (defn orphan!
   "Remove all superclasses from this class."
