@@ -265,6 +265,11 @@
   [ontology curie]
   (first (parents ontology curie)))
 
+(defn siblings
+  "Return the CURIEs of the sibling classes."
+  [ontology curie]
+  (remove #(= curie %) (children ontology (parent ontology curie))))
+
 (defn orphan!
   "Remove all superclasses from this class."
   [ontology curie]
