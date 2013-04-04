@@ -1,4 +1,4 @@
-(defproject ontodev/owlapi "0.2.0-SNAPSHOT"
+(defproject ontodev/owlapi "0.2.0"
   :description "A thin Clojure wrapper around OWLAPI."
   :url "http://github.com/ontodev/owlapi"
   :license {:name "Simplified BSD License"
