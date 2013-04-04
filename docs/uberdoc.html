@@ -3029,7 +3029,7 @@ net.brehaut.ClojureTools = (function (SH) {
   };
 })(SyntaxHighlighter);
 </script><title>ontodev/owlapi -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">ontodev/owlapi</h1><h2 class="project-version">0.2.0-SNAPSHOT</h2><br /><p>A thin Clojure wrapper around OWLAPI.</p>
-</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr><tr><td class="dep-name">org.clojure/tools.logging</td><td class="dotted"><hr /></td><td class="dep-version">0.2.4</td></tr><tr><td class="dep-name">owlapi/owlapi</td><td class="dotted"><hr /></td><td class="dep-version">3.2.4</td></tr><tr><td class="dep-name">org.semanticweb/HermiT</td><td class="dotted"><hr /></td><td class="dep-version">1.3.6</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#ontodev.owlapi">ontodev.owlapi</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#ontodev.owlapi" name="ontodev.owlapi"><h1 class="project-name">ontodev.owlapi</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h1>OWLAPI Wrapper</h1>
+</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr><tr><td class="dep-name">org.clojure/tools.logging</td><td class="dotted"><hr /></td><td class="dep-version">0.2.4</td></tr><tr><td class="dep-name">owlapi/owlapi</td><td class="dotted"><hr /></td><td class="dep-version">3.2.4</td></tr><tr><td class="dep-name">org.semanticweb/HermiT</td><td class="dotted"><hr /></td><td class="dep-version">1.3.6</td></tr><tr><td class="dep-name">org.codehaus.woodstox/woodstox-core-asl</td><td class="dotted"><hr /></td><td class="dep-version">4.1.4</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#ontodev.owlapi">ontodev.owlapi</a></li><li><a href="#ontodev.owlxml">ontodev.owlxml</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#ontodev.owlapi" name="ontodev.owlapi"><h1 class="project-name">ontodev.owlapi</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h1>OWLAPI Wrapper</h1>
 
 <p>This code provides a thin wrapper over the OWLAPI:
 http://owlapi.sourceforge.net</p>
@@ -3239,7 +3239,13 @@ convert back and forth between strings, IRIs, and objects.</p>
        (map shorten)))</pre></td></tr><tr><td class="docs"><p>Return the CURIE of the first direct superclass.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn parent
   [ontology curie]
-  (first (parents ontology curie)))</pre></td></tr><tr><td class="docs"><p>Return the CURIEs of the sibling classes.</p>
+  (first (parents ontology curie)))</pre></td></tr><tr><td class="docs"><p>Return one parent (i.e. superclass), preferably from the given namespace.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn ns-parent
+  [namespace ontology curie]
+  (let [parents   (parents ontology curie)
+        preferred (filter #(in-namespace? namespace %) parents)]
+    (or (first preferred)
+        (first parents))))</pre></td></tr><tr><td class="docs"><p>Return the CURIEs of the sibling classes.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn siblings
   [ontology curie]
   (let [parent-curie (parent ontology curie)]
@@ -3268,9 +3274,8 @@ convert back and forth between strings, IRIs, and objects.</p>
    class. Uses <code>ancestry</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ancestors
   ([ontology curie] (ancestors ontology curie parent))
-  ([ontology curie func] (drop 1 (ancestry ontology curie func))))</pre></td></tr><tr><td class="docs"><p>Get an OWLLiteral for a value. This is a very basic implementation.</p>
-
-<h2>Annotations</h2>
+  ([ontology curie func] (drop 1 (ancestry ontology curie func))))</pre></td></tr><tr><td class="docs"><h2>Annotations</h2>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Get an OWLLiteral for a value. This is a very basic implementation.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn literal?
   [value]
   (cond
@@ -3476,5 +3481,399 @@ functions.</p>
     (.fillOntology generator manager ontology)
     ontology))</pre></td></tr><tr><td class="docs"><p>Dispose of the reasoner.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn dispose!
-  [reasoner] (.dispose reasoner))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/fogus/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
+  [reasoner] (.dispose reasoner))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#ontodev.owlxml" name="ontodev.owlxml"><h1 class="project-name">ontodev.owlxml</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h1>XML Stream Processing</h1>
+
+<p>OWL ontologies are usually saved in RDF/XML format. These files can be
+very large, and slow to load and save using OWLAPI.
+This file contains tools for operating on OWL files as XML streams,
+using a streaming XML processing library. The result is more fragile,
+but uses much less memory and works very quickly.</p>
+
+<p>For an overview of working with the Woodstox XML stream processor, see
+http://www.developerfusion.com/article/84523/stax-the-odds-with-woodstox/</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>We import classes from <code>javax.xml</code> and <code>org.codehaus.stax2</code> (Woodstox).</p>
+</td><td class="codes"><pre class="brush: clojure">(ns ontodev.owlxml
+  (:import (javax.xml.namespace QName)
+           (javax.xml.stream StreamFilter XMLStreamException)
+           (org.codehaus.stax2 XMLInputFactory2 XMLOutputFactory2
+                               XMLStreamReader2 XMLStreamWriter2)))</pre></td></tr><tr><td class="docs"><h2>Clojure Type Hints</h2>
+
+<p>Java is a strongly typed programming language, in which the type of every
+variable and method is explicitly declared. Clojure is a dynamic language
+in which types are usually inferred. The type inference process often 
+involves "reflection" into classes, and this tends to slow down Clojure code.</p>
+
+<p>Clojure can be almost as fast as native Java code, but we have to avoid 
+reflection. We avoid it by adding "type hints" to tell the Clojure compiler
+what types to expect for input and return values. Metadata annotation on
+functions and values provide the hints: <code>^QName</code>, <code>^XMLInputFactory2</code>, etc.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>The code in this file is optimized for speed, so we tell the Clojure compiler
+to <code>warn-on-reflection</code> and add type hints until those warnings go away.</p>
+</td><td class="codes"><pre class="brush: clojure">(set! *warn-on-reflection* true)</pre></td></tr><tr><td class="docs"><h2>Namespaces and QNames</h2>
+
+<p>We define namespaces and names that we'll be using.</p>
+</td><td class="codes"><pre class="brush: clojure">(def rdf &quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot;)
+(def rdfs &quot;http://www.w3.org/2000/01/rdf-schema#&quot;)
+(def owl &quot;http://www.w3.org/2002/07/owl#&quot;)</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(def ^QName owl:Ontology (QName. owl &quot;Ontology&quot;))
+(def ^QName owl:Class (QName. owl &quot;Class&quot;))
+(def ^QName owl:Axiom (QName. owl &quot;Axiom&quot;))
+(def ^QName owl:annotatedSource (QName. owl &quot;annotatedSource&quot;))
+(def ^QName owl:annotatedProperty (QName. owl &quot;annotatedProperty&quot;))
+(def ^QName owl:annotatedTarget (QName. owl &quot;annotatedTarget&quot;))
+(def ^QName owl:someValuesFrom (QName. owl &quot;someValuesFrom&quot;))
+(def ^QName rdf:Description (QName. rdf &quot;Description&quot;))
+(def ^QName rdfs:subClassOf (QName. rdfs &quot;subClassOf&quot;))</pre></td></tr><tr><td class="docs"><h2>Factories</h2>
+
+<p>The following functions are used to create factories, readers, writers, 
+and filters from the Woodstox library.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Create and return Woodstox XMLInputFactory2, with configuration.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn create-input-factory
+  ^XMLInputFactory2 []
+  (XMLInputFactory2/newInstance))</pre></td></tr><tr><td class="docs"><p>By default we will use the same shared input factory.</p>
+</td><td class="codes"><pre class="brush: clojure">(def ^XMLInputFactory2 shared-input-factory (create-input-factory))</pre></td></tr><tr><td class="docs"><p>Create and return Woodstox XMLOutputFactory2.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn create-output-factory
+  ^XMLOutputFactory2 []
+  (XMLOutputFactory2/newInstance))</pre></td></tr><tr><td class="docs"><p>By default we will use the same shared output factory.</p>
+</td><td class="codes"><pre class="brush: clojure">(def ^XMLOutputFactory2 shared-output-factory (create-output-factory))</pre></td></tr><tr><td class="docs"><p>Create and return a Woodstox XMLStreamReader2 for a given path.
+   An XMLInputFactory is optional.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn create-stream-reader
+  (^XMLStreamReader2 [path]
+    (create-stream-reader shared-input-factory path))
+  (^XMLStreamReader2 [^XMLInputFactory2 input-factory path] 
+    (.createXMLStreamReader input-factory (clojure.java.io/file path))))</pre></td></tr><tr><td class="docs"><p>Create and return a Woodstox XMLStreamWriter2 for a given path.
+   An XMLOutputFactory is optional.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn create-stream-writer
+  (^XMLStreamWriter2 [path]
+    (create-stream-writer shared-output-factory path))
+  (^XMLStreamWriter2 [^XMLOutputFactory2 output-factory path] 
+    (.createXMLStreamWriter output-factory (clojure.java.io/writer path))))</pre></td></tr><tr><td class="docs"><p>Take a boolean function (with a reader as its argument) and return an
+   implementation of the StreamFilter interface.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn create-stream-filter
+  ^StreamFilter [boolean-function]
+   (proxy [StreamFilter] []
+          (accept [^XMLStreamReader2 reader]
+                  (boolean-function reader))))</pre></td></tr><tr><td class="docs"><p>Create and return a Woodstox XMLStreamReader2 with a given StreamFilter.
+   An XMLInputFactory is optional.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn create-filtered-stream-reader
+  (^XMLStreamReader2 [path ^StreamFilter stream-filter]
+    (create-filtered-stream-reader shared-input-factory path stream-filter))
+  (^XMLStreamReader2 [^XMLInputFactory2 input-factory
+                      path
+                      ^StreamFilter stream-filter] 
+    (.createFilteredReader input-factory
+                           (create-stream-reader path)
+                           stream-filter)))</pre></td></tr><tr><td class="docs"><h2>Ontology Processing Utilities</h2>
+
+<p>These functions use Woodstox tools to process OWL ontologies.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>A boolean-function that takes a reader and returns true only if the event
+   is a startElement and its name is owl:Class or rdfs:subClassOf.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn filter-classes
+  [^XMLStreamReader2 reader]
+  (and (.isStartElement reader)
+       (let [name (.getName reader)]
+         (or (.equals name owl:Class)
+             (.equals name rdfs:subClassOf)))))</pre></td></tr><tr><td class="docs"><p>Slightly more general than <code>filter-classes</code>:
+   also includes <code>owl:someValuesFrom</code></p>
+</td><td class="codes"><pre class="brush: clojure">(defn filter-resources
+  [^XMLStreamReader2 reader]
+  (and (.isStartElement reader)
+       (let [name (.getName reader)]
+         (or (.equals name owl:Class)
+             (.equals name rdf:Description)    
+             (.equals name rdfs:subClassOf)    
+             (.equals name owl:someValuesFrom)))))</pre></td></tr><tr><td class="docs"><p>Use Woodstox's <code>copyEventFromReader</code> (very fast) to copy an element from
+   the reader to the writer with whitespace and comments.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn copy-element
+  [^XMLStreamReader2 reader ^XMLStreamWriter2 writer about]
+  (let [depth (.getDepth reader)]
+    ; Write a comment with the IRI for this block.
+    (when about
+      (doto writer
+        (.writeCharacters &quot;\n\n\n    &quot;) 
+        (.writeComment (str &quot; &quot; about &quot; &quot;)) 
+        (.writeCharacters &quot;\n&quot;)))
+    (.writeCharacters writer &quot;\n    &quot;)
+    (while (&gt;= (.getDepth reader) depth)
+      (.copyEventFromReader writer reader true) 
+      (.next reader))))</pre></td></tr><tr><td class="docs"><h3>Handle owl:Axioms</h3>
+
+<p>OWL annotation axioms have their own top-level elements. Unfortunately,
+the information about the 'source' of the annotation is within a child of
+the element. Since streaming XML processors can't go backwards, we have to
+store a bunch of information about the annotation axiom, then decide 
+whether or not to copy the axiom.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>The alternative to this implementation would be is an EventStream,
+allowing us to save objects.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Take a map of information and write an owl:Axiom element.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn write-axiom
+  [^XMLStreamWriter2 w coll]
+  (try
+    (.writeCharacters w &quot;\n    &quot;)
+    (.writeStartElement w &quot;owl&quot; &quot;Axiom&quot; owl)
+    ; annotatedTarget
+    (.writeCharacters w &quot;\n        &quot;)
+    (.writeStartElement w &quot;owl&quot; &quot;annotatedTarget&quot; owl)
+    (.writeAttribute w &quot;rdf&quot; rdf &quot;datatype&quot; (:target-type coll))
+    (.writeCharacters w (:target-value coll))
+    (.writeEndElement w)
+    ; annotatedSource
+    (.writeCharacters w &quot;\n        &quot;)
+    (.writeStartElement w &quot;owl&quot; &quot;annotatedSource&quot; owl)
+    (.writeAttribute w &quot;rdf&quot; rdf &quot;resource&quot; (:source coll))
+    (.writeEndElement w)
+    ; annotations
+    (doseq [ann (:annotations coll)]
+      (.writeCharacters w &quot;\n        &quot;) 
+      (.writeStartElement w (:prefix ann) (:local-name ann) (:namespace ann)) 
+      (when (:datatype ann)
+        (.writeAttribute w &quot;rdf&quot; rdf &quot;datatype&quot; (:datatype ann))) 
+      (when (:resource ann)
+        (.writeAttribute w &quot;rdf&quot; rdf &quot;resource&quot; (:resource ann))) 
+      (when (:content ann)
+        (.writeCharacters w (:content ann))) 
+      (.writeEndElement w)) 
+    ; annotatedProperty
+    (.writeCharacters w &quot;\n        &quot;)
+    (.writeStartElement w &quot;owl&quot; &quot;annotatedProperty&quot; owl)
+    (.writeAttribute w &quot;rdf&quot; rdf &quot;resource&quot; (:property coll))
+    (.writeEndElement w)
+    ; end element
+    (.writeCharacters w &quot;\n    &quot;)
+    (.writeEndElement w)
+    (catch Exception e (println &quot;Exception while wrting to write axiom:&quot; coll))))</pre></td></tr><tr><td class="docs"><p>Take a reader, writer, and a set of IRIs to copy.
+   Read the content of the current owl:Axiom element.
+   If the axiom is for a class in the set, write it using write-axiom.
+   Otherwise just return without writing anything.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn check-axiom
+  [^XMLStreamReader2 reader ^XMLStreamWriter2 writer classes]
+  (let [depth (.getDepth reader)
+        coll  (atom {:annotations []})]
+    (while (&gt;= (.getDepth reader) depth)
+      (when (.isStartElement reader)
+        (let [name (.getName reader)]
+          (cond
+            (.equals name owl:annotatedSource)
+              (swap! coll assoc
+                     :source (.getAttributeValue reader rdf &quot;resource&quot;))
+            (.equals name owl:annotatedProperty)
+              (swap! coll assoc
+                     :property (.getAttributeValue reader rdf &quot;resource&quot;))
+            (.equals name owl:annotatedTarget)
+              (swap! coll assoc
+                     :target-type (.getAttributeValue reader rdf &quot;datatype&quot;)
+                     :target-value (.getElementText reader))
+            (.getAttributeValue reader rdf &quot;datatype&quot;)
+              (swap! coll update-in [:annotations] conj {
+                     :prefix     (.getPrefix reader)
+                     :namespace  (.getNamespaceURI reader)
+                     :local-name (.getLocalName reader)
+                     :datatype   (.getAttributeValue reader rdf &quot;datatype&quot;)
+                     :content    (do (.next reader)
+                                   (when (.hasText reader)
+                                     (.getText reader)))})   
+            :else
+              (swap! coll update-in [:annotations] conj {
+                     :prefix     (.getPrefix reader)
+                     :namespace  (.getNamespaceURI reader)
+                     :local-name (.getLocalName reader)
+                     :resource   (.getAttributeValue reader rdf &quot;resource&quot;)}))))
+      (.next reader))
+    ; Now decide whether to include the owl:Axiom or not.
+    (when (contains? classes (:source @coll))
+      (write-axiom writer @coll))))</pre></td></tr><tr><td class="docs"><p>Take a reader, writer, and a set of IRIs to copy, and an <code>else-copy</code> flag.
+   If the current element is an owl:Class in the set, copy it.
+   Otherwise, copy the element only if <code>else-copy</code> is true.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn check-element
+  [^XMLStreamReader2 reader ^XMLStreamWriter2 writer classes else-copy]
+  (let [name  (.getName reader)
+        about (.getAttributeValue reader rdf &quot;about&quot;)]
+    (cond
+      (.equals name owl:Class)
+        (if (contains? classes about)
+          (copy-element reader writer about)
+          (.skipElement reader))
+      (.equals name owl:Axiom) (check-axiom reader writer classes)
+      else-copy (copy-element reader writer about))))</pre></td></tr><tr><td class="docs"><h2>Ontology Processing Functions</h2>
+
+<p>These are the high-level functions for extracting structures from OWL files.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Given a path, read the file and return a map of all subClassOf pairs from 
+   child to parent. Note that this only works for a mono-hierarchy!</p>
+</td><td class="codes"><pre class="brush: clojure">(defn extract-hierarchy
+  [path]
+  (let [sf      (create-stream-filter filter-classes)
+        reader  (create-filtered-stream-reader path sf)
+        class   (atom nil)
+        results (atom {})]
+    (while (.hasNext reader)
+      (if (.equals owl:Class (.getName reader))
+        (let [iri (.getAttributeValue reader rdf &quot;about&quot;)]
+          (swap! results assoc iri nil) 
+          (reset! class iri))
+        (do
+          (swap! results assoc @class
+                 (.getAttributeValue reader rdf &quot;resource&quot;))
+          (reset! class nil))) 
+      (.next reader))
+    (.close reader)  
+    @results))</pre></td></tr><tr><td class="docs"><p>Slightly more general than <code>extract-hierarchy</code>. Returns a map from class
+   IRIs to sets of IRIs from <code>rdfs:subClassOf</code> and <code>owl:someValuesFrom</code> nodes.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn extract-resources
+  [path]
+  (let [sf      (create-stream-filter filter-resources)
+        reader  (create-filtered-stream-reader path sf)
+        class   (atom nil)
+        results (atom {})]
+    (while (.hasNext reader)
+      (if (.equals owl:Class (.getName reader))
+        (let [iri (.getAttributeValue reader rdf &quot;about&quot;)]
+          (when iri 
+            (when-not (find @results iri) 
+              (swap! results assoc iri #{})) 
+            (reset! class iri)))
+        (let [resource (.getAttributeValue reader rdf &quot;resource&quot;)
+              about    (.getAttributeValue reader rdf &quot;about&quot;)]
+          (when (and @class resource) 
+            (swap! results update-in [@class] conj resource))
+          (when (and @class about) 
+            (swap! results update-in [@class] conj about))))  
+      (.next reader))
+    (.close reader)
+    @results))</pre></td></tr><tr><td class="docs"><h2>Utility Functions</h2>
+
+<p>These are tools for working with hierarchy and resource collections, 
+extracted above.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Given a map of child-parent pairs and a descendant, return a lazy list of
+   ancestors starting with the descendant.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn ancestry
+  [coll item]
+  (if (get coll item)
+    (cons item (lazy-seq (ancestry coll (get coll item))))
+    [item]))</pre></td></tr><tr><td class="docs"><p>Given a collection of child-parent pairs and an item, return a set of all
+   ancestors. Check for loops.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn extract-ancestry-one
+  [coll item]
+  (let [n         100
+        ancestors (take n (ancestry coll item))]
+    (when (= n (count ancestors))
+      (println &quot;ERROR: There seems to be a loop in the ancestry of&quot;
+               item (set ancestors))
+      (throw (Exception. &quot;Loop detected in extract-ancestry-one for&quot; item)))
+    (set ancestors)))</pre></td></tr><tr><td class="docs"><p>Given a map of child-parent pairs and a list of descendants, return a set of
+   all descendants and all their ancestors.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn extract-ancestor-closure
+  [coll descendants]
+  (apply clojure.set/union
+         (map (partial extract-ancestry-one coll) descendants)))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn extract-resource-one
+  [resources coll item]
+  (if item
+    (let [items-found  (get resources item)
+          items-added  (clojure.set/union coll #{item})
+          items-to-get (clojure.set/difference items-found items-added)]
+      #_(println &quot;RESOURCES&quot; coll item items-found items-to-get)
+      (apply clojure.set/union
+             items-added
+             (map (partial extract-resource-one resources items-added)
+                  items-to-get)))
+    coll))</pre></td></tr><tr><td class="docs"><p>Given a map of item-items pairs and a list of target items, return a set of
+   all items required to complete the closure.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn extract-resource-closure
+  [resources items]
+  (reduce (partial extract-resource-one resources) #{} items))</pre></td></tr><tr><td class="docs"><p>Given two sequences, return the longest one.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn longest
+  [xs ys]
+  (if (&gt; (count xs) (count ys)) xs ys))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(def longest-initial-subsequence
+  (memoize
+   (fn [&amp; seqs]
+    (cond
+      ; some sequence lacks a first element 
+      (some nil? (map first seqs)) nil
+      ; all first elements are equal 
+      (apply = (map first seqs))
+        (cons (first (first seqs))
+              (apply longest-initial-subsequence (map rest seqs)))
+      :else nil))))</pre></td></tr><tr><td class="docs"><p>Find the longest sequence of common ancestors for a set of curies.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn common-ancestry
+  [ontology parent-fn curies] 
+  (-&gt;&gt; (map #(ancestry ontology % parent-fn) curies)
+       (map reverse)
+       (apply longest-initial-subsequence)
+       reverse))</pre></td></tr><tr><td class="docs"><h2>Extract Ontology Classes</h2>
+
+<p>Use the functions to extract or copy sets of classes from an ontology.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Take an input path, an output path, new IRI, and a set of IRIs for classes.
+   Read the input file, copy everything to the output file, except for
+   owl:Class and owl:Axiom -- only the classes and axioms with IRIs in the
+   set are copied to the output file.
+   Set the owl:Ontology path for the new file to the new IRI.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn extract-classes
+  [from-path to-path to-iri classes-coll]
+  (let [^XMLStreamReader2 reader (create-stream-reader from-path)
+        ^XMLStreamWriter2 writer (create-stream-writer to-path)
+        classes (set classes-coll)]
+    ; Copy everything before the root element.
+    (while (not= 1 (.getEventType reader))
+      (.copyEventFromReader writer reader true)
+      (.next reader))
+    (.writeCharacters writer &quot;\n&quot;)
+    ; Copy the root element's startElement event.
+    (.copyEventFromReader writer reader true)
+    ; Check all children of the root element.
+    ; 1. copy comment blocks for sections, e.g &quot;Classes&quot;
+    ; 2. check elements
+    (while (.hasNext reader)
+      (.next reader)
+      (when (and (= 5 (.getEventType reader)) ; isComment
+                 (.startsWith (.trim (.getText reader)) &quot;////&quot;)) 
+        (.writeCharacters writer &quot;\n\n\n    &quot;) 
+        (.copyEventFromReader writer reader true))
+      (when (.isStartElement reader)
+        (if (.equals owl:Ontology (.getName reader))
+          (do ; set IRI for new ontology
+            (.skipElement reader) 
+            (doto writer
+              (.writeCharacters &quot;\n    &quot;)
+              (.writeStartElement &quot;owl&quot; &quot;Ontology&quot; owl)
+              (.writeAttribute &quot;rdf&quot; rdf &quot;about&quot; to-iri)
+              (.writeEndElement)))
+          (check-element reader writer classes true))))
+    (.writeCharacters writer &quot;\n\n&quot;)
+    (.close writer)
+    (.close reader)))</pre></td></tr><tr><td class="docs"><p>As <code>extract-classes</code>, but start by copying the full contents of <code>source</code>,
+   and ignore all elements in <code>target</code> that aren't in <code>classes</code>.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn extract-classes-into
+  [source-path target-path to-path to-iri classes-coll]
+  (let [^XMLStreamReader2 source (create-stream-reader source-path)
+        ^XMLStreamReader2 target (create-stream-reader target-path)
+        ^XMLStreamWriter2 writer (create-stream-writer to-path)
+        classes (set classes-coll)] 
+    ; source
+    ; Copy everything from except the root's endElement.
+    (while (not (and (= 2 (.getEventType source)) ; endElement
+                     (= 1 (.getDepth source)))) 
+      (.copyEventFromReader writer source true)
+      (.next source))
+    (.close source)  
+    ; target
+    ; Skip everything before the root element.
+    (while (not= 1 (.getEventType target))
+      (.next target))
+    ; Check all children of the root element.
+    (while (.hasNext target)
+      (.next target)
+      (when (.isStartElement target)
+        (if (.equals owl:Ontology (.getName target))
+          (do ; set IRI for new ontology
+            (.skipElement target) 
+            (doto writer
+              (.writeCharacters &quot;\n    &quot;)
+              (.writeStartElement &quot;owl&quot; &quot;Ontology&quot; owl)
+              (.writeAttribute &quot;rdf&quot; rdf &quot;about&quot; to-iri)
+              (.writeEndElement)))
+          (check-element target writer classes false))))
+    (.writeCharacters writer &quot;\n\n&quot;)
+    (.close writer)
+    (.close target)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/fogus/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
        SyntaxHighlighter.all()</script></body></html>

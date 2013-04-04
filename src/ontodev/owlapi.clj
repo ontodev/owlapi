@@ -265,6 +265,14 @@
   [ontology curie]
   (first (parents ontology curie)))
 
+(defn ns-parent
+  "Return one parent (i.e. superclass), preferably from the given namespace."
+  [namespace ontology curie]
+  (let [parents   (parents ontology curie)
+        preferred (filter #(in-namespace? namespace %) parents)]
+    (or (first preferred)
+        (first parents))))
+
 (defn siblings
   "Return the CURIEs of the sibling classes."
   [ontology curie]
@@ -306,6 +314,7 @@
 
 
 ;; ## Annotations
+
 (defn literal?
   "Get an OWLLiteral for a value. This is a very basic implementation."
   [value]
