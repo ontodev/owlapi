@@ -11,6 +11,7 @@
 
 ;; We import classes from `javax.xml` and `org.codehaus.stax2` (Woodstox).
 (ns ontodev.owlxml
+  (:require clojure.set)
   (:import (javax.xml.namespace QName)
            (javax.xml.stream StreamFilter XMLStreamException)
            (org.codehaus.stax2 XMLInputFactory2 XMLOutputFactory2
