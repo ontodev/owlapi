@@ -23,7 +23,8 @@
     (org.semanticweb.owlapi.model OWLOntologyManager OWLOntology IRI
                                   OWLClassExpression OWLClass OWLAnnotation
                                   OWLAxiom OWLAnnotationAssertionAxiom
-                                  OWLNamedObject OWLLiteral OWLObjectProperty)
+                                  OWLNamedObject OWLLiteral OWLObjectProperty
+                                  AxiomType)
     (org.semanticweb.owlapi.apibinding OWLManager)
     (org.semanticweb.owlapi.io RDFXMLOntologyFormat)
     (org.semanticweb.owlapi.util DefaultPrefixManager)
@@ -35,7 +36,9 @@
                                  InferredClassAssertionAxiomGenerator
                                  InferredOntologyGenerator
                                  OWLOntologyMerger)
-    (org.semanticweb.HermiT Reasoner Reasoner$ReasonerFactory)))
+    (org.semanticweb.HermiT Reasoner Reasoner$ReasonerFactory)  
+    (uk.ac.manchester.cs.owlapi.modularity SyntacticLocalityModuleExtractor
+                                           ModuleType)))
 
 
 ;; ## Globals
@@ -584,5 +587,30 @@
   "Dispose of the reasoner."
   [reasoner] (.dispose reasoner))
 
+
+;; ## Modules
+
+(defn extract
+  "Given an ontology, a list of CURIES, and a new ontology IRI,
+   use the OWLAPI's SyntacticLocalityModuleExtractor and
+   return a new ontology with just those CURIEs and their related axioms.
+   A bug in older OWLAPI means that we have to remove and then restore all
+   subAnnotarionPropertyOf axioms: http://sourceforge.net/p/owlapi/bugs/306/"
+  [ontology curies new-iri]
+  (let [problems  (.getAxioms ontology AxiomType/SUB_ANNOTATION_PROPERTY_OF)
+        pairs     (doall
+                    (map (fn [a] [(.getSubProperty a) (.getSuperProperty a)])
+                         (iterator-seq (.iterator problems)))) 
+        _         (.removeAxioms manager ontology problems)
+        entities  (set (map class curies)) 
+        extractor (SyntacticLocalityModuleExtractor.
+                    manager ontology ModuleType/STAR)
+        axioms    (.extract extractor entities)
+        new-ontology (create-ontology new-iri)]
+    (.addAxioms manager new-ontology axioms)
+    (doseq [[sub sup] pairs]
+      (.addAxiom manager ontology
+                 (.getOWLSubAnnotationPropertyOfAxiom data-factory sub sup)))
+    new-ontology))
 
 

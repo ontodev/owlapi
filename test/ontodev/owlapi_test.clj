@@ -170,3 +170,15 @@
 
     (finally (owl/remove-ontology ontology)
              (io/delete-file "merged.owl"))))
+
+(let [ontology  (owl/load-ontology human-path)
+      targets   #{"http://purl.obolibrary.org/obo/OBI_0100026"}
+      extracted (owl/extract ontology targets "http://new.org")]
+  (try
+    (owl/save-ontology extracted "target/test/extracted.owl")
+    (fact "check extracted class CURIEs"
+          (set (owl/classes extracted)) =>
+          #{"ncbi:2759" "ncbi:2" "http://purl.obolibrary.org/obo/OBI_0100026" "ncbi:10239" "ncbi:2157"})
+    (finally (owl/remove-ontology ontology)
+             (owl/remove-ontology extracted))))
+
