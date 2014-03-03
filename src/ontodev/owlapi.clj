@@ -27,7 +27,7 @@
                                   AxiomType)
     (org.semanticweb.owlapi.apibinding OWLManager)
     (org.semanticweb.owlapi.io RDFXMLOntologyFormat)
-    (org.semanticweb.owlapi.util DefaultPrefixManager)
+    (org.semanticweb.owlapi.util DefaultPrefixManager OWLEntityRemover)
     (org.semanticweb.owlapi.reasoner InferenceType)
     (org.semanticweb.owlapi.util InferredAxiomGenerator
                                  InferredSubClassAxiomGenerator
@@ -563,6 +563,15 @@
     (.addAxioms manager to-ontology axioms)
     (.addAxioms manager to-ontology annotations)))
 
+(defn remove-class!
+  "Remove one class from the given ontology."
+  [ontology curie]
+  (let [remover (OWLEntityRemover.
+                  manager
+                  (java.util.Collections/singleton ontology))]
+    (.accept (class curie) remover)
+    (.applyChanges manager (.getChanges remover))))
+
 
 ;; ## Reasoners
 
@@ -591,8 +600,7 @@
 ;; ## Modules
 
 (defn extract
-  "Given an ontology, a list of CURIES, and a new ontology IRI,
-   use the OWLAPI's SyntacticLocalityModuleExtractor and
+  "Given an ontology, and a list of CURIES,
    return a new ontology with just those CURIEs and their related axioms.
    A bug in older OWLAPI means that we have to remove and then restore all
    subAnnotarionPropertyOf axioms: http://sourceforge.net/p/owlapi/bugs/306/"
