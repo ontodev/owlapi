@@ -7,7 +7,7 @@ A thin Clojure wrapper around OWLAPI, and some utilities for working with RDF/XM
 
 Add `ontodev/owlapi` to your [Leiningen](http://leiningen.org/) project dependencies:
 
-    [ontodev/owlapi "0.2.0"]
+    [ontodev/owlapi "0.3.0"]
 
 ### OWLAPI
 
@@ -28,9 +28,7 @@ Add a global prefix, load an ontology, add a class (under a parent, with a label
 
 ### XML
 
-You can also work with the lower-level RDF/XML representations of OWL ontologies. This can be faster if the ontology is very large and the operations are fairly basic. This functionality is available in the latest snapshot, so you will have to use this line in your `project.clj` instead of the one above:
-
-    [ontodev/owlapi "0.3.0-SNAPSHOT"]
+You can also work with the lower-level RDF/XML representations of OWL ontologies. This can be faster if the ontology is very large and the operations are fairly basic. 
 
 First `require` the namespace, then extract all the classes that are referred to in the definition of OBI "organisms" (recursively):
 
@@ -62,6 +60,6 @@ See the documentation in `docs/uberdoc.html` for more information.
 
 ## License
 
-Copyright © 2013, James A. Overton
+Copyright © 2014, James A. Overton
 
 Distributed under the Simplified BSD License: [http://opensource.org/licenses/BSD-2-Clause]()
