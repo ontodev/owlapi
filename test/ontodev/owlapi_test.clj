@@ -163,6 +163,11 @@
     (owl/remove-class! ontology "ncbi:foo")
     (fact (owl/label ontology "ncbi:foo") => nil)
 
+    ; Make sure reasoner runs
+    (let [reasoner (owl/reasoner ontology)]
+      (owl/reason! reasoner ontology)
+      (owl/dispose! reasoner))
+
     #_(owl/save-ontology ontology "test.owl")
 
     (finally (owl/remove-ontology ontology))))
