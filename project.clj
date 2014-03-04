@@ -5,10 +5,9 @@
             :url "http://opensource.org/licenses/BSD-2-Clause"}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/tools.logging "0.2.4"]
-                 [owlapi/owlapi "3.2.4"]
-                 [org.semanticweb/HermiT "1.3.6" :exclusions [owlapi/owlapi]]
+                 [net.sourceforge.owlapi/owlapi-api "3.4.10"]
+                 [com.hermit-reasoner/org.semanticweb.hermit "1.3.8.4"]
                  [org.codehaus.woodstox/woodstox-core-asl "4.1.4"]]
-  :repositories [["bbop" "http://code.berkeleybop.org/maven/repository/"]]
   :profiles
   {:dev {:dependencies [[midje "1.4.0"]
                         [lazytest "1.2.3"]]

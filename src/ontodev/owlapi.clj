@@ -47,8 +47,11 @@
 (def reasoner-factory (Reasoner$ReasonerFactory.))
 (def data-factory     (OWLManager/getOWLDataFactory))
 (def manager          (OWLManager/createOWLOntologyManager data-factory))
-(def prefixes         (DefaultPrefixManager.))
-
+(def prefixes (atom {"xml:"  "http://www.w3.org/XML/1998/namespace"
+                     "xsd:"  "http://www.w3.org/2001/XMLSchema#"
+                     "rdf:"  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                     "rdfs:" "http://www.w3.org/2000/01/rdf-schema#"
+                     "owl:"  "http://www.w3.org/2002/07/owl#"}))
 
 ;; ## Ontologies
 ;; Create, load, save, and remove ontologies.
@@ -106,36 +109,62 @@
 (defn add-prefix
   "Add a prefix to the shared prefix manager."
   [prefix iri]
-  (.setPrefix prefixes (append-colon prefix) iri))
+  (swap! prefixes assoc (append-colon prefix) iri))
 
 (defn expand
-  "Take a CURIE string or OWLNamedObject and return an IRI."
-  [curie]
-  (cond (and (string? curie) (.startsWith curie "http:")) (IRI/create curie)
-        (string? curie) (.getIRI prefixes curie)
-        (number? curie) (.getIRI prefixes (str curie))
-        (instance? OWLNamedObject curie) (.getIRI curie)
-        :else (throw (Exception. (str "Cannot expand " curie)))))
+  "Take a CURIE string, IRI, or OWLNamedObject and return an IRI."
+  [input]
+  (cond (instance? IRI input)
+        input
+        (instance? OWLNamedObject input)
+        (.getIRI input)
+        (and (string? input) (re-find #".+:" input))
+        (let [prefix (re-find #".+:" input)
+              result (get @prefixes prefix)]
+          (cond (contains? #{"http:"} prefix)
+                (IRI/create input)
+                (and prefix result)
+                (IRI/create (string/replace input prefix result))
+                :else
+                (IRI/create input)))
+        :else
+        (throw (Exception. (str "Cannot expand " input)))))
+
+(defn get-iri-string
+  "Given an OWLNamedObject, an IRI, or a string, return its representation
+   as a string."
+  [input]
+  (cond (string? input)
+        input
+        (instance? OWLNamedObject input)
+        (get-iri-string (.getIRI input))
+        (instance? IRI input)
+        (-> input
+            .toString
+            (string/replace #"^<|>$" ""))
+        :else
+        (throw (Exception. (str "Cannot expand " input)))))
 
 (defn shorten
-  "Take an object and return a CURIE string."
-  [curie]
-  (cond (string? curie)
-          (-> (.getShortForm prefixes (IRI/create curie))
-              .toString
-              (string/replace #"^<|>$" "")) ; have to strip angle brackets
-        (instance? OWLNamedObject curie)
-          (string/replace (.toString (.getShortForm prefixes curie))
-                          #"^<|>$" "")
-        :else (throw (Exception. (str "Cannot shorten " curie)))))
+  "Take an object and return a CURIE string (using registered prefixes)
+   if possible, otherwise an IRI string."
+  [input]
+  (let [curie (get-iri-string input)]
+    (or (->> @prefixes
+             (map (fn [[k v]] [v k]))
+             (sort-by (comp count first) >)
+             (map #(when (.startsWith curie (first %))
+                     (string/replace curie (first %) (second %))))
+             (remove nil?)
+             first)
+        curie)))
 
 (defn in-namespace?
   "Check whether a CURIE string is inside a namespace."
   [namespace curie]
-  (.startsWith (.toString (expand curie))
-               (if (.containsPrefixMapping prefixes (append-colon namespace))
-                 (.getPrefix prefixes (append-colon namespace))
-                 namespace)))
+  (if-let [result (get @prefixes (append-colon namespace))]
+    (.startsWith (get-iri-string (expand curie)) result)
+    false))
 
 ;; ## Object Properties
 
