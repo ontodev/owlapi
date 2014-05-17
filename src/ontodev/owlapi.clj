@@ -53,27 +53,37 @@
                      "rdfs:" "http://www.w3.org/2000/01/rdf-schema#"
                      "owl:"  "http://www.w3.org/2002/07/owl#"}))
 
+(defn manager
+  "Given an ontolgy, return its OWLOntologyManager."
+  [ontology]
+  (.getOWLOntologyManager ontology))
+
+
 ;; ## Ontologies
 ;; Create, load, save, and remove ontologies.
 (defn create-ontology
   [iri]
   (log/info "Creating ontology:" iri)
-  (.createOntology manager (IRI/create iri)))
+  (.createOntology (OWLManager/createOWLOntologyManager data-factory)
+                   (IRI/create iri)))
 
 (defn load-ontology
   [path]
   (log/info "Loading ontology:" path)
-  (.loadOntologyFromOntologyDocument manager (io/file path)))
+  (let [manager (OWLManager/createOWLOntologyManager data-factory)]
+    (.loadOntologyFromOntologyDocument manager (io/file path))))
 
 (defn save-ontology
   [ontology path]
   (log/info "Saving ontology:" path)
-  (.saveOntology manager ontology (IRI/create (io/as-url (io/file path)))))
+  (.saveOntology (manager ontology)
+                 ontology
+                 (IRI/create (io/as-url (io/file path)))))
 
 (defn remove-ontology
   [ontology]
   (log/info "Removing ontology:" ontology)
-  (.removeOntology manager ontology))
+  (.removeOntology (manager ontology) ontology))
 
 (defn merge-ontologies
   "Load one or more ontologies from files, merge with a new IRI, and save to
@@ -186,7 +196,7 @@
   (let [iri    (expand curie)
         class  (.getOWLClass data-factory iri)
         axiom  (.getOWLDeclarationAxiom data-factory class)]
-    (.addAxiom manager ontology axiom)
+    (.addAxiom (manager ontology) ontology axiom)
     axiom))
 
 (defn classes
@@ -247,7 +257,7 @@
   [ontology curie1 curie2]
   (let [axiom (.getOWLEquivalentClassesAxiom
                 data-factory (class curie1) (class curie2))]
-    (.addAxiom manager ontology axiom)
+    (.addAxiom (manager ontology) ontology axiom)
     axiom))
 
 (defn disjoint!
@@ -257,7 +267,7 @@
     (let [classes (map class curies)
           array   (into-array OWLClassExpression classes)
           axiom   (.getOWLDisjointClassesAxiom data-factory array)]
-      (.addAxiom manager ontology axiom)
+      (.addAxiom (manager ontology) ontology axiom)
       axiom)))
 
 
@@ -316,7 +326,8 @@
 (defn orphan!
   "Remove all superclasses from this class."
   [ontology curie]
-  (.removeAxioms manager ontology
+  (.removeAxioms (manager ontology)
+                 ontology
                  (.getSubClassAxiomsForSubClass ontology (class curie))))
 
 (defn parent!
@@ -324,7 +335,7 @@
   [ontology child-curie parent-curie]
   (let [axiom (.getOWLSubClassOfAxiom
                 data-factory (class child-curie) (class parent-curie))]
-    (.addAxiom manager ontology axiom)
+    (.addAxiom (manager ontology) ontology axiom)
     axiom))
 
 (defn ancestry
@@ -449,7 +460,7 @@
         value    (if (literal? content) (literal content) content)
         axiom    (.getOWLAnnotationAssertionAxiom data-factory
                                                   property iri value)]
-    (.addAxiom manager ontology axiom)
+    (.addAxiom (manager ontology) ontology axiom)
     axiom))
 
 (defn annotate-axiom!
@@ -460,8 +471,8 @@
         value    (if (literal? content) (literal content) content)
         annotation (.getOWLAnnotation data-factory property value)
         axiom2     (.getAnnotatedAxiom axiom #{annotation})]
-    (.removeAxiom manager ontology axiom)
-    (.addAxiom manager ontology axiom2)
+    (.removeAxiom (manager ontology) ontology axiom)
+    (.addAxiom (manager ontology) ontology axiom2)
     axiom2))
 
 (defn annotate+!
@@ -476,17 +487,18 @@
 (defn copy-annotations!
   "Copy all annotation axioms for a CURIE from one ontology to another."
   [from-ontology curie to-ontology]
-  (.addAxioms manager to-ontology
+  (.addAxioms (manager to-ontology)
+              to-ontology
               (.getAnnotationAssertionAxioms (class curie) from-ontology)))
 
 (defn remove-annotations!
   "Remove all annotations for a CURIE, or all annotations with some property."
   ([ontology curie]
     (doseq [axiom (annotation-axioms ontology curie)]
-      (.removeAxiom manager ontology axiom)))
+      (.removeAxiom (manager ontology) ontology axiom)))
   ([ontology curie property-curie]
     (doseq [axiom (annotation-axioms ontology curie property-curie)]
-      (.removeAxiom manager ontology axiom))))
+      (.removeAxiom (manager ontology) ontology axiom))))
 
 
 ;; ## Labels
@@ -512,7 +524,7 @@
   "Remove all rdfs:labels from a CURIE."
   [ontology curie]
   (doseq [axiom (label-axioms ontology curie)]
-    (.removeAxiom manager ontology axiom)))
+    (.removeAxiom (manager ontology) ontology axiom)))
 
 (defn label!
   "Add an rdfs:label for a CURIE, with an optional annotation."
@@ -589,17 +601,17 @@
         axioms      (.getAxioms from-ontology target)
         annotations (.getAnnotationAssertionAxioms target from-ontology)]
     (declare-class! to-ontology target-curie)
-    (.addAxioms manager to-ontology axioms)
-    (.addAxioms manager to-ontology annotations)))
+    (.addAxioms (manager to-ontology) to-ontology axioms)
+    (.addAxioms (manager to-ontology) to-ontology annotations)))
 
 (defn remove-class!
   "Remove one class from the given ontology."
   [ontology curie]
   (let [remover (OWLEntityRemover.
-                  manager
+                  (manager ontology)
                   (java.util.Collections/singleton ontology))]
     (.accept (class curie) remover)
-    (.applyChanges manager (.getChanges remover))))
+    (.applyChanges (manager ontology) (.getChanges remover))))
 
 
 ;; ## Reasoners
@@ -618,7 +630,7 @@
     (.precomputeInferences reasoner inferences)
     (.addGenerator generator (InferredSubClassAxiomGenerator.))
     (.addGenerator generator (InferredEquivalentClassAxiomGenerator.))
-    (.fillOntology generator manager ontology)
+    (.fillOntology generator (manager ontology) ontology)
     ontology))
 
 (defn dispose!
@@ -638,15 +650,16 @@
         pairs     (doall
                     (map (fn [a] [(.getSubProperty a) (.getSuperProperty a)])
                          (iterator-seq (.iterator problems)))) 
-        _         (.removeAxioms manager ontology problems)
+        _         (.removeAxioms (manager ontology) ontology problems)
         entities  (set (map class curies)) 
         extractor (SyntacticLocalityModuleExtractor.
-                    manager ontology ModuleType/STAR)
+                    (manager ontology) ontology ModuleType/STAR)
         axioms    (.extract extractor entities)
         new-ontology (create-ontology new-iri)]
-    (.addAxioms manager new-ontology axioms)
+    (.addAxioms (manager ontology) new-ontology axioms)
     (doseq [[sub sup] pairs]
-      (.addAxiom manager ontology
+      (.addAxiom (manager ontology)
+                 ontology
                  (.getOWLSubAnnotationPropertyOfAxiom data-factory sub sup)))
     new-ontology))
 
