@@ -1,4 +1,4 @@
-(defproject ontodev/owlapi "0.3.0"
+(defproject ontodev/owlapi "0.3.1-SNAPSHOT"
   :description "A thin Clojure wrapper around OWLAPI."
   :url "http://github.com/ontodev/owlapi"
   :license {:name "Simplified BSD License"
@@ -9,7 +9,4 @@
                  [com.hermit-reasoner/org.semanticweb.hermit "1.3.8.4"]
                  [org.codehaus.woodstox/woodstox-core-asl "4.1.4"]]
   :profiles
-  {:dev {:dependencies [[midje "1.4.0"]
-                        [lazytest "1.2.3"]]
-         :plugins [[lein-midje "2.0.1"]
-                   [lein-marginalia "0.7.1"]]}})
+  {:dev {:plugins [[lein-marginalia "0.7.1"]]}})
