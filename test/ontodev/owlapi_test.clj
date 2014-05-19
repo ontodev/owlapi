@@ -250,3 +250,12 @@
       (finally (owl/remove-ontology ontology)
                (owl/remove-ontology extracted)))))
 
+(deftest test-parse-and-render
+  (let [ontology   (owl/load-ontology human-path)
+        checker    (owl/entity-checker ontology)
+        expression "Viruses and 'Homo sapiens'"]
+    (try
+      (is (= (owl/parse-class-expression checker expression)
+             (owl/intersection ["ncbi:10239" "ncbi:9606"])))
+      (finally (owl/remove-ontology ontology)))))
+

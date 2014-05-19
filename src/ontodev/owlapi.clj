@@ -40,7 +40,10 @@
                                  InferredClassAssertionAxiomGenerator
                                  InferredOntologyGenerator
                                  OWLOntologyMerger)
-    (org.semanticweb.HermiT Reasoner Reasoner$ReasonerFactory)  
+    (org.semanticweb.owlapi.expression OWLEntityChecker)
+    (org.semanticweb.HermiT Reasoner Reasoner$ReasonerFactory)
+    (org.coode.owlapi.manchesterowlsyntax
+      ManchesterOWLSyntaxClassExpressionParser)
     (uk.ac.manchester.cs.owlapi.modularity SyntacticLocalityModuleExtractor
                                            ModuleType)))
 
@@ -671,6 +674,62 @@
                   (java.util.Collections/singleton ontology))]
     (.accept (class curie) remover)
     (.applyChanges (manager ontology) (.getChanges remover))))
+
+
+;; ## Parse and Render
+
+(defn remove-single-quotes
+  "Remove surrounding single quotes from an input."
+  [input]
+  (-> input string/trim (string/replace #"^'|'$" "")))
+
+(defn get-first-annotation
+  "Return the first entity that has a matching annotation value
+   from the set of annotation properties."
+  [ont annotation-properties value entities]
+  (->> entities
+       (mapcat
+         (fn [entity]
+           (map (juxt (constantly entity) identity)
+                (annotations ont entity annotation-properties))))
+       (filter #(= (second %) (remove-single-quotes value)))
+       first
+       first))
+
+(defn entity-checker
+  "Implement OWLEntityChecker to find entities using one or more
+   annotation properties. By default only RDFS Label is used.
+   Returns the first match found, so be careful that annotations are unique."
+  ([ont] (entity-checker ont [(.getRDFSLabel data-factory)]))
+  ([ont annotation-property-curies]
+   (let [annotation-properties
+         (->> annotation-property-curies
+              (map expand)
+              (map #(.getOWLAnnotationProperty data-factory %)))
+         find-first
+         (partial get-first-annotation ont annotation-properties)]
+     (reify OWLEntityChecker
+       (getOWLClass
+         [_ value]
+         (find-first value (.getClassesInSignature ont true)))
+       (getOWLDataProperty
+         [_ value]
+         (find-first value (.getDataPropertiesInSignature ont true)))
+       (getOWLDatatype
+         [_ value]
+         (find-first value (.getDatatypesInSignature ont true)))
+       (getOWLIndividual
+         [_ value]
+         (find-first value (.getIndividualsInSignature ont true)))
+       (getOWLObjectProperty
+         [_ value]
+         (find-first value (.getObjectPropertiesInSignature ont true)))))))
+
+(defn parse-class-expression
+  "Given a short-form-checker and an input string, return a class expression."
+  [checker input]
+  (.parse (ManchesterOWLSyntaxClassExpressionParser. data-factory checker)
+          input))
 
 
 ;; ## Reasoners
