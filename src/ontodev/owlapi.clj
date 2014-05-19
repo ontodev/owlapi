@@ -63,7 +63,7 @@
   [ontology]
   (.getOWLOntologyManager ontology))
 
-;; # IRI Mapper
+;; ## IRI Mapper
 ;; Load catalog.xml files and create an IRI mapper.
 ;; See http://protegewiki.stanford.edu/wiki/How_Owl_2.0_Imports_Work
 (defn parse-catalog-iri
@@ -96,6 +96,7 @@
     (reify
       OWLOntologyIRIMapper
       (getDocumentIRI [_ iri] (get mappings iri)))))
+
 
 ;; ## Ontologies
 ;; Create, load, save, and remove ontologies.
@@ -230,6 +231,7 @@
     (.startsWith (get-iri-string (expand curie)) result)
     false))
 
+
 ;; ## Object Properties
 
 (defn property
@@ -241,6 +243,7 @@
     (instance? OWLObjectProperty curie) curie
     :else (throw (Exception. (str "Unknown type in owlapi/property for "
                                   curie)))))
+
 
 ;; ## Classes
 
@@ -325,7 +328,7 @@
       axiom)))
 
 
-;; # Class Hierarchy
+;; ## Class Hierarchy
 
 (defn children
   "Return a list of CURIE strings of the direct subclasses."
