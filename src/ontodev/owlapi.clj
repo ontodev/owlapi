@@ -18,13 +18,17 @@
                             union complement intersection some])
   (:require [clojure.tools.logging :as log]
             [clojure.string :as string]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [clojure.xml :as xml]
+            [clojure.zip :as zip]
+            [clojure.data.zip.xml :refer [xml-> xml1-> attr text]])
   (:import
     (org.semanticweb.owlapi.model OWLOntologyManager OWLOntology IRI
                                   OWLClassExpression OWLClass OWLAnnotation
                                   OWLAxiom OWLAnnotationAssertionAxiom
                                   OWLNamedObject OWLLiteral OWLObjectProperty
-                                  AxiomType)
+                                  AxiomType
+                                  OWLOntologyIRIMapper)
     (org.semanticweb.owlapi.apibinding OWLManager)
     (org.semanticweb.owlapi.io RDFXMLOntologyFormat)
     (org.semanticweb.owlapi.util DefaultPrefixManager OWLEntityRemover)
@@ -58,6 +62,39 @@
   [ontology]
   (.getOWLOntologyManager ontology))
 
+;; # IRI Mapper
+;; Load catalog.xml files and create an IRI mapper.
+;; See http://protegewiki.stanford.edu/wiki/How_Owl_2.0_Imports_Work
+(defn parse-catalog-iri
+  "Given a catalog file and one of its `uri` entries, return an absolute IRI.
+   URIs are assumed to be file paths and are resolved relative to the
+   catalog file."
+  [catalog-file uri-string]
+  (let [file (io/file uri-string)]
+    (if (.isAbsolute file)
+      (IRI/create file)
+      (->> (str (.getParent (.getCanonicalFile catalog-file)) "/" uri-string)
+           io/file
+           (.getCanonicalFile)
+           IRI/create))))
+
+(defn parse-catalog
+  "Parse an OWLAPI catalog.xml file and
+   return a map from IRI to (absolute) IRI."
+  [catalog-file]
+  (->> (-> catalog-file xml/parse zip/xml-zip (xml-> :group :uri))
+       (map first)
+       (map :attrs)
+       (map (juxt #(IRI/create (:name %))
+                  #(parse-catalog-iri catalog-file (:uri %))))
+       (into {})))
+
+(defn catalog-xml-iri-mapper
+  [path]
+  (let [mappings (parse-catalog (io/file path))]
+    (reify
+      OWLOntologyIRIMapper
+      (getDocumentIRI [_ iri] (get mappings iri)))))
 
 ;; ## Ontologies
 ;; Create, load, save, and remove ontologies.

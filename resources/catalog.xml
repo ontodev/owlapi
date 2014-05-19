@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <group id="Folder Repository, directory=, recursive=true, Auto-Update=true, version=2" prefer="public" xml:base="">
+        <uri id="Test entry" name="http://from.some/file.owl" uri="target.owl"/>
+        <uri id="Automatically generated entry, Timestamp=1397047612423" name="duplicate:http://purl.obolibrary.org/obo/your_ontology/external/NCBITaxon_import.owl" uri="ncbi_human.owl"/>
+        <uri id="Automatically generated entry, Timestamp=1397047612423" name="duplicate:http://purl.obolibrary.org/obo/your_ontology/external/NCBITaxon_import.owl" uri="ncbi_mouse.owl"/>
+    </group>
+</catalog>

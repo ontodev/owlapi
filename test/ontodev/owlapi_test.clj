@@ -26,6 +26,13 @@
          sort)
     input))
 
+(deftest test-catalog
+  (is (= (owl/parse-catalog (io/file "resources/catalog.xml"))
+         {(IRI/create "http://from.some/file.owl")
+          (IRI/create (io/file "resources/target.owl"))
+          (IRI/create "duplicate:http://purl.obolibrary.org/obo/your_ontology/external/NCBITaxon_import.owl")
+          (IRI/create "file:/Users/james/Documents/Development/Repositories/ontodev/owlapi/resources/ncbi_mouse.owl")})))
+
 (deftest test-literal
   (are [x] (= (owl/literal? x) true)
        "string"
