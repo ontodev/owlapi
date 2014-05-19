@@ -70,13 +70,17 @@
       (testing "Test literals"
         (are [x y] (= x y)
              (owl/annotations ontology human testProperty) []
+             (owl/annotations ontology human [testProperty]) []
              (count (owl/annotation-axioms ontology human)) 7
-             (count (owl/annotation-axioms ontology human testProperty)) 0)
+             (count (owl/annotation-axioms ontology human testProperty)) 0
+             (count (owl/annotation-axioms ontology human [testProperty])) 0)
         (owl/annotate! ontology human testProperty 100)
         (are [x y] (= x y)
              (owl/annotations ontology human testProperty) ["100"]
+             (owl/annotations ontology human [testProperty]) ["100"]
              (count (owl/annotation-axioms ontology human)) 8
-             (count (owl/annotation-axioms ontology human testProperty)) 1)
+             (count (owl/annotation-axioms ontology human testProperty)) 1
+             (count (owl/annotation-axioms ontology human [testProperty])) 1)
         (owl/remove-annotations! ontology human testProperty)
         (are [x y] (= x y)
              (owl/annotations ontology human testProperty) []
@@ -104,6 +108,8 @@
              [["rdfs:comment" "FOO"]]
              (owl/annotation+ ontology human testProperty)
              ["http://foo" [["rdfs:comment" "FOO"]]]
+             (owl/annotation+ ontology human [testProperty])
+             ["http://foo" [["rdfs:comment" "FOO"]]]
              (owl/annotation+ ontology human testProperty "http://foo")
              ["rdfs:comment" "FOO"])
         (owl/remove-annotations! ontology human testProperty))
@@ -119,7 +125,8 @@
 
       (testing "Add label"
         (owl/label! ontology human "Human")
-        (is (= (owl/labels ontology human) ["Human" "Homo sapiens"])))
+        (is (= (unordered (owl/labels ontology human))
+               ["Homo sapiens" "Human"])))
 
       (testing "Relabel"
         (owl/relabel! ontology human "Homo sapiens")

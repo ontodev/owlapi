@@ -440,39 +440,29 @@
     (instance? IRI value) (.toString value)
     :else (str value)))
 
+(defn iri-set
+  "Given a single CURIE or a sequence of CURIEs, return a set of IRIs."
+  [curies]
+  (if (sequential? curies)
+   (set (map expand curies))
+   #{(expand curies)}))
+
 (defn annotation-axioms
   "Get a list of all annotation axioms for a CURIE,
-   or restrict to axioms with a given property."
+   or restrict to axioms with a given property or properties."
   ([ontology curie]
-    (iterator-seq
-      (.iterator (.getAnnotationAssertionAxioms ontology (expand curie)))))
-  ([ontology curie property-curie]
-   (let [property-iri (expand property-curie)
-         axioms       (annotation-axioms ontology curie)]
-     (filter #(= property-iri (.getIRI (.getProperty %))) axioms))))
+    (.getAnnotationAssertionAxioms ontology (expand curie)))
+  ([ontology curie property-curies]
+   (filter #(contains? (iri-set property-curies) (.getIRI (.getProperty %)))
+           (annotation-axioms ontology curie))))
 
 ;; Get the first annotation axiom, if any.
 (def annotation-axiom (comp first annotation-axioms))
 
-(defn annotations
-  "Get a list of properties and values for all the annotations on this CURIE,
-   or restrict the list to just the values of some property."
-  ([ontology curie]
-    (let [class (class curie)
-          annotations (iterator-seq
-                        (.iterator (.getAnnotations class ontology)))]
-      (map #(vector (shorten (.getProperty %)) (get-value (.getValue %)))
-           annotations)))
-  ([ontology curie property-curie]
-    (let [class    (class curie)
-          property (.getOWLAnnotationProperty data-factory
-                                              (expand property-curie))
-          annotations (iterator-seq
-                        (.iterator (.getAnnotations class ontology property)))]
-      (map #(get-value (.getValue %)) annotations))))
-
-;; Get the first annotation axiom, if any.
-(def annotation (comp first annotations))
+(defn property-value
+  "Given an OWLAnnotation, return the pair of its property CURIE and its value."
+  [annotation]
+  [(shorten (.getProperty annotation)) (get-value (.getValue annotation))])
 
 (defn axiom-annotations
   "Given an axiom, get the property, value,
@@ -480,8 +470,19 @@
   [axiom]
   [(shorten (.getProperty axiom))
    (get-value (.getValue axiom))
-   (vec (map #(vector (shorten (.getProperty %)) (get-value (.getValue %)))
-             (iterator-seq (.iterator (.getAnnotations axiom)))))])
+   (mapv property-value (.getAnnotations axiom))])
+
+(defn annotations
+  "Get a list of properties and values for all the annotations on this CURIE,
+   or restrict the list to just the values of some property or properties."
+  ([ontology curie]
+   (map property-value (annotation-axioms ontology curie)))
+  ([ontology curie property-curies]
+   (map #(get-value (.getValue %))
+        (annotation-axioms ontology curie property-curies))))
+
+;; Get the first annotation axiom, if any.
+(def annotation (comp first annotations))
 
 (defn annotations+
   "Get a list of annotation properties and values for this CURIE
@@ -489,11 +490,12 @@
    or restrict the list to just the values and annotations for some property,
    or restrict the list to just the annotations for some property and value."
   ([ontology curie]
-    (let [axioms (annotation-axioms ontology curie)]
-      (map axiom-annotations axioms)))
+   (->> (annotation-axioms ontology curie)
+        (map axiom-annotations)))
   ([ontology curie property-curie]
-    (let [axioms (annotation-axioms ontology curie property-curie)]
-      (map rest (map axiom-annotations axioms))))
+   (->> (annotation-axioms ontology curie property-curie)
+        (map axiom-annotations)
+        (map rest)))
   ([ontology curie property-curie value]
    (->> (annotations+ ontology curie property-curie)
         (filter #(= (first %) value))
