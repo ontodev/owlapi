@@ -57,6 +57,8 @@
                      "rdfs:" "http://www.w3.org/2000/01/rdf-schema#"
                      "owl:"  "http://www.w3.org/2002/07/owl#"}))
 
+(declare expand)
+
 (defn manager
   "Given an ontolgy, return its OWLOntologyManager."
   [ontology]
@@ -104,45 +106,61 @@
   (.createOntology (OWLManager/createOWLOntologyManager data-factory)
                    (IRI/create iri)))
 
+(defn merge-loaded-ontologies
+  "Given a manager with some loaded ontologies
+   and an IRI for the new merged ontology,
+   merge and return the new merged ontology."
+  [manager iri]
+  (log/info "Merging" (count (.getOntologies manager)) "ontologies")
+  (.createMergedOntology (OWLOntologyMerger. manager) manager (expand iri)))
+
 (defn load-ontology
-  [path]
-  (log/info "Loading ontology:" path)
-  (let [manager (OWLManager/createOWLOntologyManager data-factory)]
-    (.loadOntologyFromOntologyDocument manager (io/file path))))
+  "Given a path to an ontology file, an optional path to a catalog file,
+   and an optional `merge` boolean,
+   load and return the ontology."
+  ([ontology-path]
+   (load-ontology ontology-path nil false))
+  ([ontology-path catalog-path]
+   (load-ontology ontology-path catalog-path false))
+  ([ontology-path catalog-path merge-ontologies]
+   (log/info "Loading ontology:" ontology-path)
+   (let [manager (OWLManager/createOWLOntologyManager data-factory)]
+     (when catalog-path
+       (log/info "Using catalog:" catalog-path)
+       (.addIRIMapper manager (catalog-xml-iri-mapper catalog-path)))
+     (let [ontology (.loadOntologyFromOntologyDocument
+                      manager
+                      (io/file ontology-path))
+           iri      (.getOntologyIRI (.getOntologyID ontology))]
+       (if merge-ontologies
+         (merge-loaded-ontologies manager iri)
+         ontology)))))
 
 (defn save-ontology
+  "Save an ontology to a path and return the ontology"
   [ontology path]
   (log/info "Saving ontology:" path)
   (.saveOntology (manager ontology)
                  ontology
-                 (IRI/create (io/as-url (io/file path)))))
+                 (IRI/create (io/as-url (io/file path))))
+  ontology)
 
 (defn remove-ontology
+  "Remove an ontology from its manager."
   [ontology]
   (log/info "Removing ontology:" ontology)
   (.removeOntology (manager ontology) ontology))
 
 (defn merge-ontologies
   "Load one or more ontologies from files, merge with a new IRI, and save to
-   a new file. Uses a new manager and data-factory, and removes all loaded
-   ontologies."
-  [iri save-path & merge-paths]
-  (let [data-factory (OWLManager/getOWLDataFactory)
-        manager      (OWLManager/createOWLOntologyManager data-factory)
-        load-fn      (fn [path]
-                         (log/info "Loading ontology for merge:" path)
-                         (.loadOntologyFromOntologyDocument
-                           manager (io/file path)))
-        loaded       (doall (map load-fn merge-paths))]
-    (log/info "Creating ontology:" iri)
-    (let [merger (OWLOntologyMerger. manager)
-          merged (.createMergedOntology merger manager (IRI/create iri))]
-      (log/info "Saving ontology:" save-path)
-      (.saveOntology manager merged
-                     (IRI/create (io/as-url (io/file save-path))))
-      (doseq [ontology loaded] (.removeOntology manager ontology))
-      (.removeOntology manager merged)
-      nil)))
+   a new file, and return it."
+  [iri-string save-path & merge-paths]
+  (let [manager (OWLManager/createOWLOntologyManager data-factory)]
+    (doseq [path merge-paths]
+      (log/info "Loading ontology for merge:" path)
+      (.loadOntologyFromOntologyDocument manager (io/file path)))
+    (log/info "Creating ontology:" iri-string)
+    (save-ontology (merge-loaded-ontologies manager iri-string) save-path)))
 
 
 ;; ## IRIs
