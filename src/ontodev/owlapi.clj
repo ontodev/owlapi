@@ -50,7 +50,6 @@
 ;; and OWLOntologyManager.
 (def reasoner-factory (Reasoner$ReasonerFactory.))
 (def data-factory     (OWLManager/getOWLDataFactory))
-(def manager          (OWLManager/createOWLOntologyManager data-factory))
 (def prefixes (atom {"xml:"  "http://www.w3.org/XML/1998/namespace"
                      "xsd:"  "http://www.w3.org/2001/XMLSchema#"
                      "rdf:"  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
