@@ -39,11 +39,15 @@
                                  InferredDisjointClassesAxiomGenerator
                                  InferredClassAssertionAxiomGenerator
                                  InferredOntologyGenerator
+                                 ShortFormProvider
+                                 AnnotationValueShortFormProvider
                                  OWLOntologyMerger)
     (org.semanticweb.owlapi.expression OWLEntityChecker)
     (org.semanticweb.HermiT Reasoner Reasoner$ReasonerFactory)
     (org.coode.owlapi.manchesterowlsyntax
       ManchesterOWLSyntaxClassExpressionParser)
+    (uk.ac.manchester.cs.owl.owlapi.mansyntaxrenderer
+      ManchesterOWLSyntaxObjectRenderer)
     (uk.ac.manchester.cs.owlapi.modularity SyntacticLocalityModuleExtractor
                                            ModuleType)))
 
@@ -731,6 +735,40 @@
   (.parse (ManchesterOWLSyntaxClassExpressionParser. data-factory checker)
           input))
 
+(defn short-form-provider
+  "Given an ontology, return a short-form provider for RDFS labels
+   or a set of annotation properties."
+  ([ontology] (short-form-provider ontology [(.getRDFSLabel data-factory)]))
+  ([ontology annotations]
+   (AnnotationValueShortFormProvider.
+     (map #(.getOWLAnnotationProperty data-factory (expand %)) annotations)
+     {}
+     (manager ontology))))
+
+(defn quoted-provider
+  "This is just a wrapper to put single-quotes around short forms
+   that contain spaces."
+  [short-form-provider]
+  (reify ShortFormProvider
+    (dispose [_] (.dispose short-form-provider))
+    (getShortForm
+      [_ entity]
+      (let [short-form (.getShortForm short-form-provider entity)]
+        (if (re-find #"\s" short-form)
+          (str "'" short-form "'")
+          short-form)))))
+
+(def quoted-short-form-provider (comp quoted-provider short-form-provider))
+
+(defn render-class-expression
+  "Given a short-form-provider and a class expression,
+   return a string representation of the class expression."
+  [provider class-expression]
+  (let [string-writer (java.io.StringWriter.)]
+    (with-open [writer (io/writer string-writer)]
+      (.visit (ManchesterOWLSyntaxObjectRenderer. writer provider)
+              class-expression))
+    (string/replace (.toString string-writer) #"\s+" " ")))
 
 ;; ## Reasoners
 

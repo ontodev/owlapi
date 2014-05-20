@@ -253,9 +253,19 @@
 (deftest test-parse-and-render
   (let [ontology   (owl/load-ontology human-path)
         checker    (owl/entity-checker ontology)
-        expression "Viruses and 'Homo sapiens'"]
+        provider   (owl/quoted-short-form-provider ontology)
+        text       "Viruses and 'Homo sapiens'"
+        expression (owl/intersection ["ncbi:10239" "ncbi:9606"])]
     (try
-      (is (= (owl/parse-class-expression checker expression)
-             (owl/intersection ["ncbi:10239" "ncbi:9606"])))
+      (are [x y] (= x y)
+           (owl/parse-class-expression checker text)
+           expression
+           (owl/render-class-expression provider expression)
+           text
+           ; round-trip
+           (owl/render-class-expression
+             provider
+             (owl/parse-class-expression checker text))
+           text)
       (finally (owl/remove-ontology ontology)))))
 
