@@ -23,12 +23,14 @@
             [clojure.zip :as zip]
             [clojure.data.zip.xml :refer [xml-> xml1-> attr text]])
   (:import
-    (org.semanticweb.owlapi.model OWLOntologyManager OWLOntology IRI
-                                  OWLClassExpression OWLClass OWLAnnotation
-                                  OWLAxiom OWLAnnotationAssertionAxiom
-                                  OWLNamedObject OWLLiteral OWLObjectProperty
-                                  AxiomType
-                                  OWLOntologyIRIMapper)
+    (org.semanticweb.owlapi.model OWLOntologyManager OWLOntology
+                                  IRI OWLOntologyIRIMapper
+                                  OWLAxiom AxiomType
+                                  OWLEntity OWLNamedObject
+                                  OWLClass OWLClassExpression
+                                  OWLAnnotation OWLAnnotationAssertionAxiom
+                                  OWLLiteral
+                                  OWLObjectProperty)
     (org.semanticweb.owlapi.apibinding OWLManager)
     (org.semanticweb.owlapi.io RDFXMLOntologyFormat)
     (org.semanticweb.owlapi.util DefaultPrefixManager OWLEntityRemover)
@@ -239,6 +241,17 @@
     false))
 
 
+;; ## Entities
+
+(defn entity
+  [curie]
+  (cond
+    (instance? OWLEntity curie) curie
+    (string? curie) (.getOWLClass data-factory (expand curie))
+    :else (throw (Exception. (str "Unknown type in owlapi/entity for "
+                                  curie)))))
+
+
 ;; ## Object Properties
 
 (defn property
@@ -279,9 +292,12 @@
   [curie]
   (cond
     (string? curie) (.getOWLClass data-factory (expand curie))
+    (instance? OWLClass curie) curie
     (instance? OWLClassExpression curie) curie
-    :else (throw (Exception. (str "Unknown type in owlapi/class for " curie)))))
-
+    :else (throw (Exception. (str "Unknown type in owlapi/class for '"
+                                  curie
+                                  "' with type: "
+                                  (type curie))))))
 
 ;; ## Class Expressions
 
@@ -807,7 +823,7 @@
                     (map (fn [a] [(.getSubProperty a) (.getSuperProperty a)])
                          (iterator-seq (.iterator problems)))) 
         _         (.removeAxioms (manager ontology) ontology problems)
-        entities  (set (map class curies)) 
+        entities  (set (map entity curies))
         extractor (SyntacticLocalityModuleExtractor.
                     (manager ontology) ontology ModuleType/STAR)
         axioms    (.extract extractor entities)
