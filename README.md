@@ -7,7 +7,7 @@ A thin Clojure wrapper around OWLAPI, and some utilities for working with RDF/XM
 
 Add `ontodev/owlapi` to your [Leiningen](http://leiningen.org/) project dependencies:
 
-    [ontodev/owlapi "0.3.0"]
+    [ontodev/owlapi "0.3.2"]
 
 ### OWLAPI
 
